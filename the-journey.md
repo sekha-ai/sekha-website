@@ -108,7 +108,7 @@ The Forbes/Wirth piece provides the crucial philosophical anchor: **simplicity i
 
 You're absolutely right: there should be an open, universal solution. Let me propose **The AI Memory Controller** as exactly that project.
 
-=========================
+
 And so it began. An implementation plan was made and soon thereafter development started.
 -------------------------
 

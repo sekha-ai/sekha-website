@@ -424,6 +424,16 @@ This is the key: **Even the frontier labs should adopt this**.
 - **Competition**: Open-source controllers compete on features, not lock-in.
 
 
+** Continued Conversation **
+User: Before outlining with maximum detail, without actually providing any code (so we don't bloat this actual context window), let's discuss a bit further. 
+
+I love the mcp technology and have no problem introducing this 'tech' as an mcp server, but what about other implementation/applications so that we can lower the requirement bar (as in more than just mcp compatible AI can use the tech)? 
+
+I think most businesses that would use this tech for real problems would still run this in their cloud environment for various reasons like on demand gpu use or handling of private data, many reasons. But before the business goes all in like that, there will likely be a developer trying this out on their local machine or a simple cloud instance. In all cases, it seems the finished product is actually a docker image or docker images with all the pieces 'already compiled and assembled' so the user just edits a couple configuration files with their credentials and user data, for various deployment types. No? I'm open to everything. I like the idea of having a simple local installer, but feel we should broaden the vision a bit on how all of the world will use this, including but not limited to openai, google, moonshot AI, anthropic, etc. Seems in the end we have an ultra slim as possible raw product and then do the extra legwork of then building out docker images with everything built so it is another level of easy.   
+
+Also, I am only one human being. This tech is much bigger than just me, and I am honored to give it a birth. I'm happy to accept tips, donations, and job offers. But, everyone else in the world should be able to contribute or fork and make it better. That said, if the AI vendors themselves use this it seams perhaps they should pay for it somehow in someway. Seems only fair. I don't know, I'm conflicted on the licensing/cost situation a bit. Seems the 'big boys' should pay something but everyone else, including small businesses. It just starts to feel like the big companies shouldn't be able to get it for free since they could have already solved this whole problem and released a universal fix and gave it away for free for everyone, but they didn't. And now we are having this conversation. So.. Let's change the world!
+
+
 And so it began. An implementation plan was made and soon thereafter development started.
 -------------------------
 

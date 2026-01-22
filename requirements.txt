@@ -1,0 +1,14 @@
+# MkDocs core
+mkdocs>=1.5.0
+mkdocs-material>=9.5.0
+
+# Plugins
+mkdocs-minify-plugin>=0.7.0
+mkdocs-git-revision-date-localized-plugin>=1.2.0
+
+# Extensions (included in mkdocs-material)
+pymdown-extensions>=10.0
+
+# Optional but recommended
+pillow>=10.0.0  # Image processing
+cairosvg>=2.7.0  # SVG support

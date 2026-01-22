@@ -1,0 +1,218 @@
+site_name: Sekha Documentation
+site_url: https://docs.sekha.dev
+site_description: Complete documentation for Sekha AI Memory Controller - the universal memory system for AI that never forgets
+site_author: Sekha AI
+
+repo_name: sekha-ai
+repo_url: https://github.com/sekha-ai/sekha-controller
+edit_uri: https://github.com/sekha-ai/sekha-website/edit/main/docs/
+
+copyright: Copyright &copy; 2025-2026 Sekha AI - AGPL-3.0 License
+
+theme:
+  name: material
+  custom_dir: overrides
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant      # Fast page loading
+    - navigation.tracking     # URL updates as you scroll
+    - navigation.tabs         # Top-level navigation tabs
+    - navigation.tabs.sticky  # Tabs remain visible on scroll
+    - navigation.sections     # Group navigation sections
+    - navigation.expand       # Expand subsections by default
+    - navigation.path         # Breadcrumbs
+    - navigation.indexes      # Section index pages
+    - navigation.top          # Back to top button
+    - search.suggest          # Search suggestions
+    - search.highlight        # Highlight search terms
+    - search.share            # Share search results
+    - toc.follow              # TOC follows scroll
+    - toc.integrate           # TOC in left sidebar
+    - content.code.copy       # Copy button for code blocks
+    - content.code.annotate   # Code annotations
+    - content.tabs.link       # Link tabbed content
+
+extra:
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/sekha-ai
+      name: Sekha on GitHub
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/sekha
+      name: Join our Discord
+    - icon: fontawesome/solid/envelope
+      link: mailto:hello@sekha.dev
+      name: Email us
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX  # Replace with actual GA4 ID
+
+markdown_extensions:
+  # Python Markdown
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+      toc_depth: 3
+  
+  # Python Markdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+plugins:
+  - search:
+      lang: en
+      separator: '[\s\-]+'
+  - minify:
+      minify_html: true
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: timeago
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/extra.js
+
+nav:
+  - Home: index.md
+  
+  - Getting Started:
+    - getting-started/index.md
+    - Quickstart: getting-started/quickstart.md
+    - Installation: getting-started/installation.md
+    - Configuration: getting-started/configuration.md
+    - First Conversation: getting-started/first-conversation.md
+  
+  - Architecture:
+    - architecture/index.md
+    - System Overview: architecture/overview.md
+    - Controller (Rust): architecture/controller.md
+    - LLM Bridge (Python): architecture/llm-bridge.md
+    - Memory Orchestration: architecture/memory-orchestration.md
+    - Data Flow: architecture/data-flow.md
+    - MCP Protocol: architecture/mcp-protocol.md
+  
+  - Deployment:
+    - deployment/index.md
+    - Local Binary: deployment/local-binary.md
+    - Docker Compose: deployment/docker-compose.md
+    - Kubernetes: deployment/kubernetes.md
+    - Cloud Providers:
+      - AWS: deployment/aws.md
+      - Azure: deployment/azure.md
+      - GCP: deployment/gcp.md
+    - Security Best Practices: deployment/security.md
+  
+  - API Reference:
+    - api-reference/index.md
+    - REST API: api-reference/rest-api.md
+    - MCP Tools: api-reference/mcp-tools.md
+    - Authentication: api-reference/authentication.md
+    - Rate Limiting: api-reference/rate-limiting.md
+    - Error Codes: api-reference/error-codes.md
+  
+  - SDKs:
+    - sdks/index.md
+    - Python SDK: sdks/python-sdk.md
+    - JavaScript SDK: sdks/javascript-sdk.md
+    - Code Examples: sdks/examples.md
+  
+  - Integrations:
+    - integrations/index.md
+    - Claude Desktop (MCP): integrations/claude-desktop.md
+    - VS Code Extension: integrations/vscode.md
+    - Obsidian Plugin: integrations/obsidian.md
+    - CLI Tool: integrations/cli.md
+    - Custom Integrations: integrations/custom.md
+  
+  - Guides:
+    - guides/index.md
+    - Organizing Memory: guides/organizing-memory.md
+    - Semantic Search: guides/semantic-search.md
+    - Context Assembly: guides/context-assembly.md
+    - Summarization: guides/summarization.md
+    - Pruning Old Data: guides/pruning.md
+    - Backup & Restore: guides/backup-restore.md
+    - Importing Conversations: guides/importing.md
+  
+  - Development:
+    - development/index.md
+    - Contributing: development/contributing.md
+    - Building from Source: development/building.md
+    - Testing: development/testing.md
+    - Code Coverage: development/coverage.md
+    - Repository Structure: development/repositories.md
+    - Adding LLM Providers: development/llm-providers.md
+  
+  - Reference:
+    - reference/index.md
+    - Configuration Reference: reference/configuration.md
+    - Environment Variables: reference/environment.md
+    - Database Schema: reference/database.md
+    - Vector Store: reference/vector-store.md
+    - Metrics & Monitoring: reference/metrics.md
+  
+  - Troubleshooting:
+    - troubleshooting/index.md
+    - Common Issues: troubleshooting/common-issues.md
+    - Performance Tuning: troubleshooting/performance.md
+    - Debugging: troubleshooting/debugging.md
+    - FAQ: troubleshooting/faq.md
+  
+  - About:
+    - about/index.md
+    - The Journey: about/the-journey.md
+    - Roadmap: about/roadmap.md
+    - License: about/license.md
+    - Support & Contact: about/support.md

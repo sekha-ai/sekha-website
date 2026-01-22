@@ -1,0 +1,39 @@
+/* Custom styles for Sekha documentation */
+
+:root {
+  --sekha-primary: #4f46e5;
+  --sekha-accent: #7c3aed;
+}
+
+/* Code block enhancements */
+.highlight .filename {
+  background-color: var(--md-code-bg-color);
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+  padding: 0.5em 1em;
+  font-family: var(--md-code-font-family);
+  font-size: 0.85em;
+}
+
+/* Callout boxes */
+.admonition.tip {
+  border-left-color: var(--sekha-primary);
+}
+
+/* API endpoint styling */
+.api-endpoint {
+  font-family: var(--md-code-font-family);
+  background: var(--md-code-bg-color);
+  padding: 0.2em 0.4em;
+  border-radius: 0.2em;
+  font-weight: 600;
+}
+
+/* Navigation breadcrumbs enhancement */
+.md-path {
+  opacity: 0.7;
+}
+
+/* Footer customization */
+.md-footer-meta {
+  background-color: var(--md-footer-bg-color);
+}

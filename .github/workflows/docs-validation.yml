@@ -1,0 +1,41 @@
+name: Validate Documentation
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'requirements.txt'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install markdown-link-validator
+      
+      - name: Validate mkdocs.yml
+        run: mkdocs build --strict --verbose
+      
+      - name: Check for broken links
+        run: |
+          mkdocs build
+          find site -name '*.html' -exec grep -l 'href="#"' {} \; || true
+      
+      - name: Spell check
+        uses: rojopolis/spellcheck-github-actions@0.36.0
+        with:
+          config_path: .spellcheck.yml
+          task_name: Markdown

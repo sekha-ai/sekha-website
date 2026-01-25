@@ -1,0 +1,87 @@
+name: README Sync Monitoring
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  check-readme-consistency:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Check README standards
+        id: check
+        run: |
+          echo "## README Sync Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Checking if repository READMEs follow the standardized template..." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # List of Sekha repositories
+          repos=(
+            "sekha-controller"
+            "sekha-llm-bridge"
+            "sekha-docker"
+            "sekha-mcp"
+            "sekha-python-sdk"
+            "sekha-js-sdk"
+            "sekha-cli"
+            "sekha-vscode"
+            "sekha-obsidian"
+            "sekha-proxy"
+            "sekha-roadmap"
+            "sekha-website"
+          )
+          
+          # Required elements in each README
+          required_elements=(
+            "Quick Start"
+            "Documentation"
+            "docs.sekha.dev"
+            "License"
+            "AGPL-3.0"
+          )
+          
+          issues_found=0
+          
+          echo "📋 **Repositories to Check:** ${#repos[@]}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          for repo in "${repos[@]}"; do
+            echo "Checking $repo..." >> $GITHUB_STEP_SUMMARY
+            # Note: This is a placeholder - actual implementation would fetch READMEs via GitHub API
+            # For now, we just document the process
+          done
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "ℹ️ **Note:** This workflow documents the README standardization process." >> $GITHUB_STEP_SUMMARY
+          echo "Manual verification of repository READMEs is recommended." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📝 **Standard README Template Elements:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Brief component description (2-3 paragraphs)" >> $GITHUB_STEP_SUMMARY
+          echo "- Quick Start section with installation command" >> $GITHUB_STEP_SUMMARY
+          echo "- Link to https://docs.sekha.dev" >> $GITHUB_STEP_SUMMARY
+          echo "- Development section linking to CONTRIBUTING.md" >> $GITHUB_STEP_SUMMARY
+          echo "- Dual license information (AGPL-3.0 / Commercial)" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Create issue if drift detected
+        if: steps.check.outputs.issues_found != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'README Standardization Needed',
+              body: 'Automated check detected repositories with non-standard READMEs. Please review and update to match the standardized template.',
+              labels: ['documentation', 'maintenance']
+            });

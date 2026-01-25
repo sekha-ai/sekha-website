@@ -1,114 +1,90 @@
 # API Reference
 
-Complete API documentation for Sekha AI Memory Controller.
+Complete API documentation for Sekha Controller.
 
 ## Available APIs
 
-Sekha provides two primary API interfaces:
+### REST API
 
-### [REST API](rest-api.md)
-17 HTTP endpoints for all memory operations. Use from any programming language.
+HTTP REST API for all memory operations.
 
-**Quick Links:**
-- [Store Conversations](rest-api.md#store-conversations)
-- [Query Memory](rest-api.md#semantic-query)
-- [Update Conversations](rest-api.md#update-conversation)
-- [Health & Stats](rest-api.md#health-checks)
+[**REST API Documentation →**](rest-api.md)
 
-### [MCP Tools](mcp-tools.md)
-7 Model Context Protocol tools for Claude Desktop and compatible applications.
+- 17 endpoints for CRUD operations
+- Full conversation lifecycle management
+- Semantic search and filtering
+- Statistics and analytics
 
-**Available Tools:**
-- `memory_store` - Save conversations
-- `memory_query` - Search memory
-- `memory_get_context` - Retrieve context
-- `memory_create_label` - Organize
-- `memory_prune_suggest` - Cleanup
-- `memory_export` - Export data
-- `memory_stats` - View statistics
+### MCP Tools
 
-## API Features
+Model Context Protocol tools for Claude Desktop and other LLM integrations.
 
-### [Authentication](authentication.md)
-Bearer token authentication with configurable API keys.
+[**MCP Tools Documentation →**](mcp-tools.md)
 
-### [Rate Limiting](rate-limiting.md)
-Configurable rate limits per IP and per endpoint.
+- 7 tools for memory management
+- Native Claude Desktop integration
+- Context-aware memory operations
 
-### [Error Codes](error-codes.md)
-Standardized error responses with detailed messages.
+## Quick Reference
 
-## Interactive Documentation
+### Key Endpoints
 
-When running locally, access interactive API documentation at:
+| Operation | Endpoint | Method |
+|-----------|----------|--------|
+| Create conversation | `/conversations` | POST |
+| Get conversation | `/conversations/{id}` | GET |
+| Search conversations | `/conversations/search` | POST |
+| Update conversation | `/conversations/{id}` | PUT |
+| Delete conversation | `/conversations/{id}` | DELETE |
+| Get statistics | `/stats` | GET |
+| Health check | `/health` | GET |
 
-```
-http://localhost:8080/swagger-ui/
-```
+### Authentication
 
-## Quick Examples
-
-### cURL
+All API requests require Bearer token authentication:
 
 ```bash
-# Store a conversation
-curl -X POST http://localhost:8080/api/v1/conversations \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key" \
-  -d '{
-    "label": "Test",
-    "messages": [
-      {"role": "user", "content": "Hello"},
-      {"role": "assistant", "content": "Hi there!"}
-    ]
-  }'
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.sekha.dev/conversations
 ```
 
-### Python
+Set your API key in config:
 
-```python
-from sekha import SekhaClient
-
-client = SekhaClient(api_key="your-api-key")
-result = client.store_conversation(
-    label="Test",
-    messages=[
-        {"role": "user", "content": "Hello"},
-        {"role": "assistant", "content": "Hi there!"}
-    ]
-)
+```toml
+[server]
+api_key = "sk-sekha-your-secure-key-min-32-chars-long"
 ```
 
-### JavaScript
+### Rate Limiting
 
-```javascript
-import { SekhaClient } from 'sekha-js';
+Default limits:
+- **100 requests/second**
+- **200 burst size**
 
-const client = new SekhaClient({ apiKey: 'your-api-key' });
-const result = await client.storeConversation({
-  label: 'Test',
-  messages: [
-    { role: 'user', content: 'Hello' },
-    { role: 'assistant', content: 'Hi there!' }
-  ]
-});
+Configure in `config.toml`:
+
+```toml
+[rate_limiting]
+requests_per_second = 100
+burst_size = 200
 ```
 
-## SDK Documentation
+### Error Handling
 
-Prefer using SDKs over raw API calls:
+Standard HTTP status codes:
 
-- [Python SDK Documentation](../sdks/python-sdk.md)
-- [JavaScript SDK Documentation](../sdks/javascript-sdk.md)
+| Code | Meaning |
+|------|--------|
+| 200 | Success |
+| 201 | Created |
+| 400 | Bad Request |
+| 401 | Unauthorized |
+| 404 | Not Found |
+| 429 | Rate Limited |
+| 500 | Server Error |
 
-## API Versioning
+## Next Steps
 
-All endpoints are versioned with `/api/v1/` prefix. Breaking changes will increment the version number.
-
-Current version: **v1**
-
-## Need Help?
-
-- [Common Issues](../troubleshooting/common-issues.md)
-- [Discord Community](https://discord.gg/sekha)
-- [GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues)
+- [REST API Reference](rest-api.md) - Complete endpoint documentation
+- [MCP Tools Reference](mcp-tools.md) - Model Context Protocol tools
+- [Configuration Guide](../getting-started/configuration.md) - API configuration

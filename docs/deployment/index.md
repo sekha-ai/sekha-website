@@ -1,178 +1,174 @@
 # Deployment
 
-Deploy Sekha Controller in various environments.
+Deploy Sekha to production environments.
 
 ## Deployment Options
 
-### Quick Start (Development)
+### Docker Compose (Recommended)
 
-For testing and development:
+Quickest way to deploy the full stack:
 
-- [**Docker Compose**](docker-compose.md) - Easiest way to get started
-- Includes all dependencies (ChromaDB, Ollama)
-- Perfect for local development
+[**Docker Compose Guide →**](docker-compose.md)
 
-### Production Deployments
+- Complete stack in one command
+- Development and production configs
+- Auto-restart and health checks
+- Volume persistence
 
-For production use:
+### Production Deployment
 
-- [**Production Guide**](production.md) - Best practices for production
-- [**Security Hardening**](security.md) - Secure your deployment
+Enterprise-grade deployment:
 
-### Cloud Deployments (Coming Soon)
+[**Production Guide →**](production.md)
 
-Planned for Q2 2026:
+- High availability setup
+- Load balancing
+- Monitoring and logging
+- Backup strategies
+- Resource requirements
 
-- **Kubernetes** - Container orchestration
-- **AWS** - EC2, ECS, Fargate
-- **Azure** - AKS, Container Instances
-- **GCP** - GKE, Cloud Run
+### Security Hardening
 
-## Deployment Comparison
+Secure your deployment:
 
-| Method | Best For | Complexity | Scalability |
-|--------|----------|------------|--------------|
-| Docker Compose | Development, single server | Low | Vertical only |
-| Binary | Lightweight deployments | Low | Vertical only |
-| Kubernetes | Multi-node, high availability | High | Horizontal |
-| Managed Cloud | Hands-off operation | Medium | Auto-scaling |
+[**Security Guide →**](security.md)
 
-## Prerequisites
+- API key management
+- Network isolation
+- Rate limiting
+- TLS/SSL configuration
+- Secret management
 
-### All Deployments
+## Infrastructure Platforms
 
-- Linux, macOS, or Windows (WSL2)
-- 2+ CPU cores
-- 4GB+ RAM
-- 10GB+ disk space
+### Cloud Deployments
 
-### For Docker Deployments
+While we currently provide Docker Compose deployment, Sekha can be deployed to any cloud platform:
 
-- Docker 20.10+
-- Docker Compose 2.0+
+- **AWS** - EC2, ECS, or EKS
+- **Azure** - VM, Container Instances, or AKS
+- **GCP** - Compute Engine, Cloud Run, or GKE
+- **DigitalOcean** - Droplets or App Platform
 
-### For Production
+**Coming Soon:** Kubernetes manifests and cloud-specific guides
 
-- Reverse proxy (nginx, Caddy, Traefik)
-- TLS certificates
-- Monitoring solution (Prometheus, Grafana)
+## Quick Deploy
 
-## Architecture Tiers
+### Minimum Requirements
 
-### Single Server (Recommended Start)
+- **CPU:** 2 cores
+- **RAM:** 4GB
+- **Storage:** 20GB
+- **OS:** Linux, macOS, or Windows with Docker
 
-```
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃   Single Server Deployment   ┃
-┃                              ┃
-┃  Sekha Controller (Docker)   ┃
-┃  ChromaDB (Docker)           ┃
-┃  Ollama (Docker)             ┃
-┃  SQLite (volume)             ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-```
+### One-Command Deploy
 
-**Suitable for:**
-- Personal use
-- Small teams (<10 users)
-- Development/staging
-
-### Multi-Server (Production)
-
-```
-┏━━━━━━━━━━━━━━━┓     ┏━━━━━━━━━━━━━━━┓     ┏━━━━━━━━━━━━━━━┓
-┃  Controller 1  ┃     ┃  Controller 2  ┃     ┃  Controller 3  ┃
-┗━━━━━━━━┳━━━━━━┛     ┗━━━━━━━━┳━━━━━━┛     ┗━━━━━━━━┳━━━━━━┛
-        ┃                    ┃                    ┃
-        ┗━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┛
-                      ┃
-               ┏━━━━━━┴━━━━━━┓
-               ┃  PostgreSQL  ┃
-               ┗━━━━━━━━━━━━━┛
-
-     ┏━━━━━━━━━━━━┓          ┏━━━━━━━━━━━━┓
-     ┃   ChromaDB   ┃          ┃    Ollama   ┃
-     ┗━━━━━━━━━━━━┛          ┗━━━━━━━━━━━━┛
+```bash
+git clone https://github.com/sekha-ai/sekha-docker.git
+cd sekha-docker
+cp .env.example .env
+# Edit .env with your settings
+docker compose up -d
 ```
 
-**Suitable for:**
-- Enterprise deployments
-- High availability requirements
-- Multi-team organizations
+### Verify Deployment
 
-## Configuration
+```bash
+# Check health
+curl http://localhost:8080/health
 
-All deployments use the same configuration file format:
-
-```toml
-# ~/.sekha/config.toml
-
-[server]
-host = "0.0.0.0"
-port = 8080
-api_key = "sk-sekha-your-secure-key-min-32-chars-long"
-
-[database]
-url = "sqlite://~/.sekha/data/sekha.db"
-# url = "postgresql://user:pass@localhost:5432/sekha"  # Production
-
-[vector_store]
-chroma_url = "http://localhost:8000"
-
-[llm]
-provider = "ollama"
-ollama_url = "http://localhost:11434"
+# Check logs
+docker compose logs -f
 ```
 
-See [Configuration Guide](../getting-started/configuration.md) for full reference.
+## Environment Variables
 
-## Security Checklist
+Key configuration options:
 
-Before deploying to production:
+```bash
+# Server
+SEKHA_HOST=0.0.0.0
+SEKHA_PORT=8080
+SEKHA_API_KEY=sk-sekha-your-secure-key
 
-- [ ] Generate strong API key (32+ characters)
-- [ ] Enable TLS/HTTPS
-- [ ] Configure firewall rules
-- [ ] Set up reverse proxy
-- [ ] Enable rate limiting
-- [ ] Configure CORS properly
-- [ ] Set up monitoring and alerts
-- [ ] Regular backups configured
-- [ ] Log rotation enabled
-- [ ] Security updates automated
+# Database
+DATABASE_URL=sqlite:///data/sekha.db
 
-See [Security Guide](security.md) for details.
+# Vector Store
+CHROMA_HOST=chroma
+CHROMA_PORT=8000
+
+# LLM
+OLLAMA_HOST=ollama
+OLLAMA_PORT=11434
+```
+
+See [Configuration Guide](../getting-started/configuration.md) for all options.
 
 ## Monitoring
 
 ### Health Checks
 
 ```bash
+# Controller health
 curl http://localhost:8080/health
+
+# Chroma health  
+curl http://localhost:8000/api/v1/heartbeat
+
+# Ollama health
+curl http://localhost:11434/api/version
 ```
 
-Response:
-```json
-{
-  "status": "healthy",
-  "database": "ok",
-  "vector_store": "ok",
-  "llm": "ok"
-}
+### Resource Monitoring
+
+```bash
+# Container stats
+docker stats
+
+# Disk usage
+docker system df
 ```
 
-### Metrics (Coming Soon)
+## Backup & Recovery
 
-Prometheus metrics will be available at `/metrics`:
+### Backup Data
 
-- Request rates and latencies
-- Database connection pool stats
-- Vector store query performance
-- LLM operation timings
+```bash
+# Backup SQLite database
+docker compose exec controller sqlite3 /data/sekha.db ".backup /data/backup.db"
+
+# Backup ChromaDB
+docker compose exec chroma tar czf /chroma-data-backup.tar.gz /chroma-data
+```
+
+### Restore Data
+
+```bash
+# Restore SQLite
+docker cp backup.db container_name:/data/sekha.db
+
+# Restore ChromaDB
+docker cp chroma-data-backup.tar.gz container_name:/
+docker compose exec chroma tar xzf /chroma-data-backup.tar.gz
+```
+
+## Scaling
+
+### Horizontal Scaling
+
+For high-traffic deployments:
+
+- Deploy multiple controller instances behind a load balancer
+- Use PostgreSQL instead of SQLite for shared state
+- Scale ChromaDB with distributed deployment
+- Add Redis for caching and rate limiting
+
+**Coming Soon:** Detailed scaling guide
 
 ## Next Steps
 
-- [**Docker Compose**](docker-compose.md) - Quick start deployment
-- [**Production Guide**](production.md) - Production best practices
-- [**Security Hardening**](security.md) - Secure your deployment
-- [**Configuration Reference**](../getting-started/configuration.md) - Complete config guide
+- [Docker Compose](docker-compose.md) - Full stack deployment
+- [Production Guide](production.md) - Enterprise deployment
+- [Security](security.md) - Hardening your installation
+- [Configuration](../getting-started/configuration.md) - All config options

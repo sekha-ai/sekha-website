@@ -1,135 +1,101 @@
 # Architecture
 
-Understand how Sekha Controller is designed and how its components work together.
+Understand how Sekha works under the hood.
 
-## Overview
+## System Components
 
-Sekha is built as a **modular, production-ready memory system** for AI applications.
+Sekha consists of three main components:
 
-**Key Documents:**
+### 1. Controller (Rust)
 
-- [**System Overview**](overview.md) - High-level architecture and components
-- [**Memory Orchestration**](memory-orchestration.md) - How memory is managed and optimized
+The core memory engine handling all operations:
 
-## System Design
+- REST API server (Axum)
+- Database layer (SeaORM + SQLite)
+- Memory orchestration logic
+- Context assembly algorithms
+- MCP protocol server
 
-### Core Components
+[Learn more →](overview.md#controller)
 
-**Sekha Controller** (Rust)
-- REST API server
-- Database management (SQLite/PostgreSQL)
-- Vector store integration (ChromaDB)
-- Memory orchestration engine
-- Health monitoring and metrics
+### 2. LLM Bridge (Python)
 
-**LLM Bridge** (Python)
-- LLM provider abstraction
-- Embedding generation
-- Summarization
+Handles all LLM-related operations:
+
+- Embedding generation (Ollama/OpenAI/Anthropic)
+- Conversation summarization
 - Label suggestions
+- Async queue processing
 
-**Storage Layer**
-- **SQLite** - Primary database (single-user)
-- **PostgreSQL** - Multi-user deployments (planned Q2 2026)
+[Learn more →](overview.md#llm-bridge)
+
+### 3. Storage Layer
+
+Dual storage approach:
+
+- **SQLite** - Structured data (conversations, metadata)
 - **ChromaDB** - Vector embeddings for semantic search
+
+[Learn more →](overview.md#storage)
+
+## Key Concepts
+
+### Memory Orchestration
+
+How Sekha intelligently manages and retrieves memories:
+
+[**Memory Orchestration →**](memory-orchestration.md)
+
+- Semantic search with embeddings
+- Context budgeting and prioritization
+- Importance scoring
+- Folder-based organization
 
 ### Data Flow
 
+End-to-end flow of data through the system:
+
+1. **Store** → Messages saved to SQLite
+2. **Embed** → LLM Bridge generates embeddings
+3. **Index** → ChromaDB stores vectors
+4. **Query** → Semantic search retrieves relevant context
+5. **Assemble** → Optimal context built for LLM
+
+## Architecture Diagrams
+
+### High-Level Overview
+
+```mermaid
+graph TB
+    Client[Client Application] --> API[REST API / MCP Server]
+    API --> Controller[Controller Core]
+    Controller --> DB[(SQLite)]
+    Controller --> Vector[(ChromaDB)]
+    Controller --> Bridge[LLM Bridge]
+    Bridge --> Ollama[Ollama]
 ```
-Client Request
-      ↓
-  REST API (Rust)
-      ↓
-  Controller Logic
-      │
-      ├────────────────────────▶ SQLite (metadata)
-      │
-      ├────────────────────────▶ ChromaDB (vectors)
-      │
-      └────────────────────────▶ LLM Bridge (Python)
-                               │
-                               └───▶ Ollama/OpenAI/etc
+
+### Request Flow
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant A as API
+    participant Ctrl as Controller
+    participant DB as SQLite
+    participant Vec as ChromaDB
+    participant LLM as LLM Bridge
+    
+    C->>A: POST /conversations
+    A->>Ctrl: Create conversation
+    Ctrl->>DB: Store messages
+    Ctrl->>LLM: Generate embeddings
+    LLM->>Vec: Store vectors
+    Vec-->>C: 201 Created
 ```
-
-## Design Principles
-
-### 1. Production-First
-- Type-safe Rust core
-- Comprehensive error handling
-- Graceful degradation
-- Health checks and monitoring
-
-### 2. LLM Agnostic
-- Provider abstraction layer
-- Pluggable LLM backends
-- Supports Ollama, OpenAI, Anthropic, Google
-
-### 3. Scalable
-- Async I/O (Tokio)
-- Connection pooling
-- Efficient memory usage
-- Horizontal scaling ready
-
-### 4. Privacy-Focused
-- Self-hosted by default
-- Local embeddings (Ollama)
-- No telemetry
-- Air-gap capable
-
-## Performance Characteristics
-
-| Operation | Latency (P95) | Throughput |
-|-----------|---------------|------------|
-| Create conversation | <50ms | 1,000/sec |
-| Search (semantic) | <100ms | 500/sec |
-| Get by ID | <10ms | 5,000/sec |
-| Update metadata | <30ms | 2,000/sec |
-| Context assembly | <200ms | 200/sec |
-
-*Benchmarked on: 4-core CPU, 8GB RAM, SSD*
-
-## Technology Stack
-
-### Controller (Rust)
-- **Axum** - HTTP framework
-- **SQLx** - Database driver
-- **Tokio** - Async runtime
-- **Serde** - Serialization
-- **Tracing** - Structured logging
-
-### LLM Bridge (Python)
-- **FastAPI** - API framework
-- **LangChain** - LLM abstractions
-- **ChromaDB** - Vector client
-- **Ollama** - Local LLM runtime
-
-### Infrastructure
-- **Docker** - Containerization
-- **GitHub Actions** - CI/CD
-- **Codecov** - Coverage tracking
-- **Docker Hub** - Image registry
-
-## Security Model
-
-### Authentication
-- Bearer token (API key)
-- Configurable token length (min 32 chars)
-- No built-in user management (use reverse proxy)
-
-### Network Security
-- TLS/HTTPS support
-- CORS configuration
-- Rate limiting
-- Request size limits
-
-### Data Security
-- SQLite WAL mode (ACID guarantees)
-- Connection encryption (PostgreSQL)
-- No data sent to external services (local LLMs)
 
 ## Next Steps
 
-- [**System Overview**](overview.md) - Detailed component breakdown
-- [**Memory Orchestration**](memory-orchestration.md) - How memory management works
-- [**Deployment Guide**](../deployment/index.md) - Production deployment
-- [**Performance Benchmarks**](../reference/benchmarks.md) - Detailed performance data
+- [System Overview](overview.md) - Detailed component architecture
+- [Memory Orchestration](memory-orchestration.md) - How memory management works
+- [Deployment](../deployment/docker-compose.md) - Deploy the stack

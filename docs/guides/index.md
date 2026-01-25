@@ -1,227 +1,151 @@
 # Guides
 
-Practical guides and tutorials for using Sekha effectively.
+Practical guides for using Sekha effectively.
 
-## Available Guides
+## Use Case Guides
 
-### Use Case Guides
+### AI Coding Assistant
 
-Learn how to use Sekha for specific workflows:
+Build an AI coding assistant with persistent memory:
 
-- [**AI Coding Assistant**](ai-coding-assistant.md) - Build a coding assistant with perfect project memory
-- [**Research Assistant**](research-assistant.md) - Manage research papers and notes with semantic search
+[**AI Coding Assistant →**](ai-coding-assistant.md)
 
-## Common Workflows
+- Remember project context across sessions
+- Track architectural decisions
+- Build knowledge base of code patterns
+- Context-aware code suggestions
 
-### Creating and Managing Conversations
+### Research Assistant
 
-**Create a conversation:**
+Create a research assistant that never forgets:
 
-```bash
-curl -X POST http://localhost:8080/conversations \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Project Planning",
-    "content": "Initial meeting notes...",
-    "labels": ["work", "planning"],
-    "importance": 8
-  }'
-```
+[**Research Assistant →**](research-assistant.md)
 
-**Search conversations:**
+- Organize research notes semantically
+- Track sources and citations
+- Find related research across conversations
+- Build comprehensive literature reviews
 
-```bash
-curl -X POST http://localhost:8080/conversations/search \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "authentication bugs",
-    "limit": 10
-  }'
-```
+## Core Concepts
 
 ### Organizing Memory
 
-**Using Labels:**
+Best practices for organizing conversations:
 
-Organize conversations with hierarchical labels:
-
-```
-work/
-  ├── projects/project-alpha
-  ├── meetings/standup
-  └── decisions/architecture
-
-personal/
-  ├── learning/rust
-  └── ideas/app-concepts
-```
-
-**Using Importance Scores:**
-
-- **1-3:** Low priority, can be archived
-- **4-6:** Medium priority, keep accessible
-- **7-9:** High priority, frequently referenced
-- **10:** Critical, never archive
+- **Folders** - Organize by project, topic, or context
+- **Labels** - Tag conversations with themes
+- **Importance** - Score 1-10 for prioritization
+- **Summaries** - Auto-generate for long conversations
 
 ### Semantic Search
 
-Search by meaning, not just keywords:
+Find memories by meaning, not just keywords:
 
-```python
-from sekha_sdk import SekhaClient
-
-client = SekhaClient(api_url="http://localhost:8080")
-
-# Find conversations about security, even if they don't use that word
-results = client.search(
-    query="How do we handle user authentication?",
-    limit=5
-)
-
-for convo in results:
-    print(f"{convo.title}: {convo.relevance_score}")
-```
+- Query in natural language
+- Relevance scoring with embeddings
+- Cross-conversation search
+- Time-based filtering
 
 ### Context Assembly
 
-Get optimal context for AI conversations:
+Buil optimal context for your LLM:
 
-```python
-# Get relevant context within token budget
-context = client.assemble_context(
-    query="Tell me about our API design",
-    max_tokens=8000,
-    include_labels=["work/api"],
-    min_importance=6
-)
+- Budget-aware context selection
+- Importance-weighted prioritization
+- Summary integration for compression
+- Source tracking for citations
 
-# Use in your LLM prompt
-prompt = f"""
-Context from memory:
-{context}
+### Memory Pruning
 
-User question: Tell me about our API design
-"""
-```
+Keep your memory system efficient:
 
-### Summarization
+- Identify low-value conversations
+- Prune by age, importance, or relevance
+- Selective deletion with summaries
+- Export before deletion
 
-Generate summaries of conversation history:
+### Conversation Summarization
 
-```bash
-# Get daily summary
-curl "http://localhost:8080/summaries/daily?date=2026-01-25" \
-  -H "Authorization: Bearer YOUR_API_KEY"
+Compress long conversations:
 
-# Get weekly summary
-curl "http://localhost:8080/summaries/weekly?week=2026-W04" \
-  -H "Authorization: Bearer YOUR_API_KEY"
-```
+- Automatic summarization
+- Configurable detail levels
+- Summary-aware context assembly
+- Token budget optimization
 
-### Pruning and Maintenance
+### Importing Data
 
-Keep your memory clean and focused:
+Bring existing data into Sekha:
 
-```python
-# Get pruning recommendations
-recommendations = client.get_pruning_suggestions(
-    min_age_days=90,
-    max_importance=3
-)
+- ChatGPT export compatibility
+- Claude conversation imports
+- Custom JSON format
+- Bulk import tools
 
-print(f"Found {len(recommendations)} conversations to archive")
+### Backup & Restore
 
-# Archive low-value conversations
-for convo_id in recommendations:
-    client.archive_conversation(convo_id)
-```
+Protect your memory:
 
-## Integration Examples
+- Export conversations as JSON
+- SQLite database backups
+- ChromaDB vector backups
+- Automated backup scripts
 
-### With Claude Desktop
+## Integration Guides
 
-Use MCP tools to give Claude access to your memory:
+Integrate Sekha with your workflow:
 
-```json
-{
-  "mcpServers": {
-    "sekha": {
-      "command": "node",
-      "args": ["/path/to/sekha-mcp-server/build/index.js"],
-      "env": {
-        "SEKHA_API_URL": "http://localhost:8080",
-        "SEKHA_API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
-
-See [Claude Desktop Integration](../integrations/claude-desktop.md) for details.
-
-### With Python Applications
-
-```python
-from sekha_sdk import SekhaClient
-import openai
-
-# Initialize clients
-sekha = SekhaClient(api_url="http://localhost:8080")
-openai_client = openai.Client()
-
-def chat_with_memory(user_message):
-    # Get relevant context from Sekha
-    context = sekha.assemble_context(
-        query=user_message,
-        max_tokens=4000
-    )
-    
-    # Send to LLM with context
-    response = openai_client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": f"Context: {context}"},
-            {"role": "user", "content": user_message}
-        ]
-    )
-    
-    # Store conversation in Sekha
-    sekha.conversations.create(
-        title=f"Chat: {user_message[:50]}",
-        content=f"Q: {user_message}\nA: {response.choices[0].message.content}"
-    )
-    
-    return response.choices[0].message.content
-```
+- [Claude Desktop](../integrations/claude-desktop.md) - MCP integration
+- **VS Code** (Coming Soon) - Editor integration
+- **Obsidian** (Coming Soon) - Knowledge base sync
+- **CLI** (Coming Soon) - Terminal interface
 
 ## Best Practices
 
-### Memory Organization
+### Conversation Labels
 
-1. **Use consistent labeling** - Establish a label hierarchy early
-2. **Set importance scores** - Help prioritize what to keep
-3. **Regular pruning** - Archive or delete low-value conversations monthly
-4. **Descriptive titles** - Make conversations easy to find
+Use descriptive, searchable labels:
 
-### Performance Optimization
+```bash
+# Good
+"Architecture Discussion - Auth System"
+"Bug Fix - Payment Processing"
+"Research - Vector Databases"
 
-1. **Batch operations** - Create/update multiple conversations together
-2. **Use semantic search** - More efficient than full-text for meaning-based queries
-3. **Limit context size** - Only retrieve what you need
-4. **Archive old data** - Keep active dataset focused
+# Not ideal
+"Chat 1"
+"Conversation"
+"Notes"
+```
 
-### Security
+### Folder Structure
 
-1. **Rotate API keys** - Change keys periodically
-2. **Use HTTPS** - Always use TLS in production
-3. **Limit access** - Use firewall rules and network isolation
-4. **Backup regularly** - Protect against data loss
+Organize by project or domain:
+
+```
+work/
+  ├── project-a/
+  ├── project-b/
+  └── research/
+
+personal/
+  ├── learning/
+  └── creative/
+```
+
+### Importance Scoring
+
+Use consistent scoring:
+
+- **9-10** - Critical decisions, breakthroughs
+- **7-8** - Important discussions, solutions
+- **5-6** - Regular conversations, notes
+- **3-4** - Minor discussions
+- **1-2** - Trivial or test conversations
 
 ## Next Steps
 
-- [**AI Coding Assistant**](ai-coding-assistant.md) - Build a coding assistant
-- [**Research Assistant**](research-assistant.md) - Manage research with Sekha
-- [**API Reference**](../api-reference/index.md) - Complete API documentation
-- [**SDK Documentation**](../sdks/index.md) - Use Python or JavaScript SDKs
+- [AI Coding Assistant](ai-coding-assistant.md) - Build a coding assistant
+- [Research Assistant](research-assistant.md) - Research workflow
+- [Claude Desktop](../integrations/claude-desktop.md) - MCP integration
+- [API Reference](../api-reference/rest-api.md) - Programmatic access

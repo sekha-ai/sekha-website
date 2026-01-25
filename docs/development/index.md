@@ -1,246 +1,198 @@
 # Development
 
-Contribute to Sekha or build custom integrations.
+Contribute to Sekha development.
 
-## Getting Started
+## Quick Start
 
-### For Contributors
+### Prerequisites
 
-- [**Contributing Guide**](contributing.md) - How to contribute to Sekha
-- [**Testing Guide**](testing.md) - Running and writing tests
+- **Rust 1.83+** for Controller
+- **Python 3.9+** for LLM Bridge  
+- **Docker** for dependencies
+- **Git** for version control
 
-### Development Prerequisites
-
-**Required:**
-- Rust 1.83+ (stable)
-- Python 3.11+
-- Docker 20.10+
-- Git
-
-**Recommended:**
-- rust-analyzer (VSCode/IDE extension)
-- cargo-watch (auto-rebuild)
-- cargo-nextest (better test runner)
-
-## Repository Structure
-
-### Main Repositories
-
-| Repository | Purpose | Language |
-|------------|---------|----------|
-| `sekha-controller` | Core memory engine | Rust |
-| `sekha-llm-bridge` | LLM operations | Python |
-| `sekha-mcp-server` | MCP protocol server | TypeScript |
-| `sekha-sdk-python` | Python SDK | Python |
-| `sekha-sdk-js` | JavaScript/TypeScript SDK | TypeScript |
-| `sekha-website` | Documentation site | Markdown |
-
-### Controller Architecture
-
-```
-sekha-controller/
-├── src/
-│   ├── api/          # REST API routes
-│   ├── db/           # Database layer
-│   ├── models/       # Data models
-│   ├── orchestration/  # Memory orchestration
-│   ├── vector/       # Vector store integration
-│   └── config.rs    # Configuration
-├── tests/
-│   ├── integration/  # Integration tests
-│   └── unit/        # Unit tests
-├── Cargo.toml
-└── README.md
-```
-
-## Development Workflow
-
-### 1. Clone and Setup
+### Setup Development Environment
 
 ```bash
-# Clone controller
+# Clone the repository
 git clone https://github.com/sekha-ai/sekha-controller.git
 cd sekha-controller
 
-# Build
+# Start dependencies
+docker run -d --name chroma -p 8000:8000 chromadb/chroma
+docker run -d --name ollama -p 11434:11434 ollama/ollama
+
+# Install Rust dependencies
 cargo build
 
 # Run tests
 cargo test
 
-# Run in development mode
+# Start development server
 cargo run
 ```
 
-### 2. Start Dependencies
+## Development Workflow
+
+### 1. Create a Branch
 
 ```bash
-# Start ChromaDB and Ollama
-docker-compose -f docker-compose.dev.yml up -d
-
-# Check they're running
-curl http://localhost:8000/api/v1/heartbeat  # ChromaDB
-curl http://localhost:11434/api/version      # Ollama
+git checkout -b feature/your-feature-name
 ```
 
-### 3. Make Changes
+### 2. Make Changes
+
+Follow the [Contributing Guide](contributing.md) for:
+
+- Code style guidelines
+- Commit message format
+- Testing requirements
+
+### 3. Run Tests
 
 ```bash
-# Auto-rebuild on file changes
-cargo watch -x run
+# Unit tests
+cargo test --lib
 
-# Run specific tests
-cargo test conversations
+# Integration tests  
+cargo test --test '*'
 
-# Check code formatting
-cargo fmt --check
-
-# Run clippy (linter)
-cargo clippy
+# All tests
+cargo test
 ```
 
-### 4. Submit PR
+See [Testing Guide](testing.md) for comprehensive testing practices.
+
+### 4. Check Quality
 
 ```bash
-# Create feature branch
-git checkout -b feature/amazing-feature
+# Format code
+cargo fmt --all
 
-# Commit changes
-git commit -m "Add amazing feature"
+# Lint
+cargo clippy --all-targets --all-features -- -D warnings
 
-# Push and create PR
-git push origin feature/amazing-feature
+# Security audit
+cargo deny check advisories
 ```
 
-## Code Standards
+### 5. Submit PR
 
-### Rust Code Style
+- Push to your fork
+- Open Pull Request on GitHub
+- Wait for CI checks to pass
+- Address review feedback
 
-- Use `rustfmt` (runs on save in VSCode)
-- Follow Rust API Guidelines
-- Write doc comments for public APIs
-- Keep functions under 50 lines when possible
+## Repository Structure
 
-**Example:**
+### sekha-controller (Rust)
 
-```rust
-/// Creates a new conversation in the memory store.
-///
-/// # Arguments
-/// * `title` - The conversation title
-/// * `content` - Initial message content
-///
-/// # Returns
-/// * `Result<Conversation>` - Created conversation or error
-pub async fn create_conversation(
-    title: String,
-    content: String,
-) -> Result<Conversation> {
-    // Implementation
-}
+```
+sekha-controller/
+├── src/
+│   ├── api/           # REST API endpoints
+│   ├── models/        # Database models
+│   ├── services/      # Business logic
+│   ├── orchestration/ # Memory orchestration
+│   ├── mcp/          # MCP server
+│   └── main.rs       # Entry point
+├── tests/
+│   ├── unit/         # Unit tests
+│   ├── integration/  # Integration tests
+│   └── e2e/          # End-to-end tests
+├── migrations/       # DB migrations
+└── Cargo.toml
 ```
 
-### Python Code Style
+### sekha-llm-bridge (Python)
 
-- Follow PEP 8
-- Use type hints
-- Write docstrings (Google style)
-- Use `black` for formatting
-- Use `ruff` for linting
-
-### Testing Requirements
-
-**For PRs to be merged:**
-
-- [ ] All existing tests pass
-- [ ] New features have tests
-- [ ] Code coverage ≥85%
-- [ ] No clippy warnings
-- [ ] Formatted with rustfmt
-
-## Building Custom Integrations
-
-### Using the SDKs
-
-**Python:**
-
-```python
-from sekha_sdk import SekhaClient
-
-client = SekhaClient(
-    api_url="http://localhost:8080",
-    api_key="your-api-key"
-)
-
-# Create conversation
-convo = client.conversations.create(
-    title="My Integration",
-    content="Hello from my custom app"
-)
+```
+sekha-llm-bridge/
+├── sekha_llm_bridge/
+│   ├── embeddings/   # Embedding generation
+│   ├── summarization/ # Summarization
+│   └── providers/    # LLM providers
+├── tests/
+└── requirements.txt
 ```
 
-**JavaScript:**
+## Testing
 
-```javascript
-import { SekhaClient } from '@sekha/sdk';
+### Test Coverage
 
-const client = new SekhaClient({
-  apiUrl: 'http://localhost:8080',
-  apiKey: 'your-api-key'
-});
+We maintain **85%+ coverage**:
 
-// Create conversation
-const convo = await client.conversations.create({
-  title: 'My Integration',
-  content: 'Hello from my custom app'
-});
+```bash
+# Generate coverage report
+cargo tarpaulin --out Html
+
+# View report
+open tarpaulin-report.html
 ```
 
-### Direct REST API
+### Test Types
 
-See [REST API Reference](../api-reference/rest-api.md) for endpoint documentation.
+- **Unit Tests** - Pure logic, no external dependencies
+- **Integration Tests** - Database + API integration
+- **E2E Tests** - Full stack with all services
 
-### Adding LLM Providers
+See [Testing Guide](testing.md) for details.
 
-To add a new LLM provider (OpenAI, Anthropic, etc.):
+## Code Quality
 
-1. Implement the `LLMProvider` trait (Rust)
-2. Add provider configuration
-3. Update orchestration layer
-4. Add integration tests
-5. Update documentation
+### Automated Checks
 
-See the Contributing Guide for detailed instructions.
+All PRs must pass:
 
-## Development Resources
+- ✅ Formatting (`cargo fmt`)
+- ✅ Linting (`cargo clippy`)
+- ✅ Tests (all tests pass)
+- ✅ Coverage (85%+ maintained)
+- ✅ Security audit (`cargo deny`)
+
+### CI/CD
+
+GitHub Actions automatically:
+
+- Runs all tests
+- Checks code quality
+- Builds Docker images
+- Publishes releases
+
+## Contributing Areas
+
+### High Priority
+
+- 🔴 **LLM Provider Support** - Add OpenAI, Anthropic, etc.
+- 🔴 **Kubernetes Deployment** - Production k8s manifests
+- 🟡 **PostgreSQL Support** - Alternative to SQLite
+- 🟡 **Performance Optimization** - Query optimization
+
+### Good First Issues
+
+- Documentation improvements
+- Test coverage expansion
+- Error message clarity
+- Example applications
+
+Check [GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) for tasks.
+
+## Resources
 
 ### Documentation
 
-- [Architecture Overview](../architecture/overview.md)
-- [API Reference](../api-reference/index.md)
-- [Testing Guide](testing.md)
+- [Contributing Guide](contributing.md) - How to contribute
+- [Testing Guide](testing.md) - Testing practices
+- [Architecture](../architecture/overview.md) - System design
 
-### Communication
+### Community
 
-- **Discord:** [discord.gg/sekha](https://discord.gg/sekha)
-- **GitHub Discussions:** [Ask questions](https://github.com/sekha-ai/sekha-controller/discussions)
-- **Issues:** [Report bugs](https://github.com/sekha-ai/sekha-controller/issues)
-
-### Useful Tools
-
-**Rust:**
-- `cargo-expand` - Macro expansion
-- `cargo-edit` - Dependency management
-- `cargo-udeps` - Find unused dependencies
-- `cargo-deny` - Security audits
-
-**Testing:**
-- `cargo-nextest` - Faster test runner
-- `cargo-tarpaulin` - Code coverage
-- `cargo-watch` - Auto-rebuild
+- [Discord](https://discord.gg/sekha) - Chat with developers
+- [GitHub Discussions](https://github.com/sekha-ai/sekha-controller/discussions) - Ask questions
+- [GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues) - Report bugs
 
 ## Next Steps
 
-- [**Contributing Guide**](contributing.md) - Detailed contribution process
-- [**Testing Guide**](testing.md) - How to run and write tests
-- [**Architecture**](../architecture/index.md) - Understand the system design
+- [Contributing Guide](contributing.md) - Contribution workflow
+- [Testing Guide](testing.md) - Testing standards
+- [Architecture](../architecture/overview.md) - System architecture

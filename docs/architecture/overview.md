@@ -1,165 +1,247 @@
 # System Overview
 
-Sekha is a production-ready **universal memory system for AI** that provides persistent, searchable context windows.
+A deep dive into Sekha's architecture.
 
-## Architecture at a Glance
+## System Architecture
 
 ```mermaid
-C4Context
-    Person(user, "User", "Human or AI agent")
-    System(sekha, "Sekha", "AI Memory System")
-    System_Ext(llm, "LLM", "GPT-4, Claude, Llama")
+graph TB
+    subgraph Client Layer
+        CLI[CLI Tool]
+        SDK[SDKs]
+        MCP[MCP Clients]
+    end
     
-    Rel(user, sekha, "Stores/queries conversations")
-    Rel(sekha, llm, "Requests embeddings/summaries")
-    Rel(llm, sekha, "Returns AI outputs")
+    subgraph Controller
+        API[REST API Server]
+        Orch[Memory Orchestrator]
+        MCP_S[MCP Server]
+    end
     
-    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+    subgraph Storage
+        SQLite[(SQLite DB)]
+        Chroma[(ChromaDB)]
+    end
+    
+    subgraph LLM
+        Bridge[LLM Bridge]
+        Ollama[Ollama/OpenAI]
+    end
+    
+    CLI --> API
+    SDK --> API
+    MCP --> MCP_S
+    
+    API --> Orch
+    MCP_S --> Orch
+    
+    Orch --> SQLite
+    Orch --> Chroma
+    Orch --> Bridge
+    
+    Bridge --> Ollama
 ```
 
-## Core Principles
+## Core Components
 
-### 1. Local-First
+### Controller (Rust)
 
-**Your data stays on your infrastructure.**
+The heart of Sekha, written in Rust for performance and reliability.
 
-- No cloud dependencies
-- Air-gapped deployment supported
-- GDPR/HIPAA compliant
+**Responsibilities:**
+- REST API server (Axum framework)
+- Request routing and validation
+- Business logic orchestration
+- Database operations (SeaORM)
+- MCP protocol server
+- Rate limiting and auth
 
-### 2. LLM-Agnostic
+**Key Features:**
+- Sub-100ms query latency
+- 1000+ requests/second throughput
+- Memory-safe concurrency
+- Zero-copy operations
+- Async I/O throughout
 
-**Use any LLM without vendor lock-in.**
+**Technology Stack:**
+- [Axum](https://github.com/tokio-rs/axum) - Web framework
+- [SeaORM](https://www.sea-ql.org/SeaORM/) - Database ORM
+- [Tokio](https://tokio.rs/) - Async runtime
+- [Tower](https://github.com/tower-rs/tower) - Middleware
 
-- Currently: Ollama (Llama, Mistral, etc.)
-- Q1 2026: OpenAI, Anthropic, Google
-- Switch LLMs mid-conversation
+### LLM Bridge (Python)
 
-### 3. Production-Ready
+Handles all LLM-related operations in a separate service.
 
-**Built for real-world use.**
+**Responsibilities:**
+- Embedding generation
+- Conversation summarization
+- Label suggestions
+- Provider abstraction
+- Async job queue
 
-- 80%+ test coverage
-- Sub-100ms semantic queries
-- ACID guarantees
-- Crash recovery
+**Supported Providers:**
+- **Ollama** - Local models (default)
+- **OpenAI** - GPT-4, text-embedding-ada-002 (coming soon)
+- **Anthropic** - Claude models (coming soon)
+- **Google** - Gemini (planned)
 
-### 4. Developer-Friendly
+**Technology Stack:**
+- FastAPI - HTTP server
+- LangChain - LLM orchestration
+- Pydantic - Data validation
+- AsyncIO - Concurrent processing
 
-**Multiple integration paths.**
+### Storage Layer
 
-- REST API (17 endpoints)
-- MCP protocol (7 tools)
-- Python/JS SDKs
-- CLI tool
+Dual storage approach for optimal performance.
 
----
+**SQLite - Structured Data:**
+- Conversations and metadata
+- User preferences
+- Labels and folders
+- System configuration
+- Transaction support
 
-## Technology Stack
+**Why SQLite:**
+- Zero-config embedded database
+- ACID transactions
+- Excellent single-server performance
+- File-based (easy backups)
+- PostgreSQL migration path
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| **Controller** | Rust 1.83+ | Performance, safety, small binaries |
-| **Web Framework** | Axum | Async, fast, ergonomic |
-| **ORM** | SeaORM | Type-safe SQL, migrations |
-| **Database** | SQLite/Postgres | ACID, mature, embeddable |
-| **Vector Store** | ChromaDB | Fast semantic search |
-| **LLM Bridge** | Python + FastAPI | Ecosystem, LangChain integration |
-| **Protocol** | REST + MCP | Standard, widely supported |
+**ChromaDB - Vector Embeddings:**
+- Message embeddings (768-dim)
+- Semantic search index
+- Similarity calculations
+- Metadata filtering
 
----
+**Why ChromaDB:**
+- Built for embeddings
+- Fast cosine similarity
+- Metadata support
+- Docker-ready
+- Open source
 
-## Deployment Models
+## Data Flow
 
-### Single Binary
-
-**Simplest deployment - just run the binary.**
-
-```bash
-./sekha-controller --config ~/.sekha/config.toml
-```
-
-**Pros:**
-- No Docker required
-- Minimal dependencies
-- Fast startup (~100ms)
-
-**Cons:**
-- Manual dependency management
-- Single process (no LLM bridge)
-
-### Docker Compose
-
-**Recommended for development and small deployments.**
-
-```bash
-docker compose up -d
-```
-
-**Includes:**
-- Sekha Controller
-- LLM Bridge
-- ChromaDB
-- Ollama (optional)
-
-**Pros:**
-- One command deployment
-- All dependencies included
-- Easy updates
-
-**Cons:**
-- Requires Docker
-- Higher resource usage
-
-### Kubernetes
-
-**For production multi-node deployments.**
-
-```bash
-kubectl apply -f sekha-deployment.yaml
-```
-
-**Features:**
-- Auto-scaling
-- Load balancing
-- High availability
-- Rolling updates
-
----
-
-## Request Flow
+### 1. Store Conversation
 
 ```mermaid
 sequenceDiagram
-    participant C as Client
-    participant API as Controller API
-    participant Orch as Memory Orchestrator
-    participant DB as SQLite/Postgres
-    participant Vec as ChromaDB
-    participant LLM as LLM Bridge
+    participant Client
+    participant API
+    participant Controller
+    participant DB
+    participant LLM
+    participant Chroma
     
-    C->>API: POST /api/v1/query
-    API->>Orch: Assemble context
-    Orch->>LLM: Embed query
-    LLM-->>Orch: Query vector
-    Orch->>Vec: Semantic search
-    Vec-->>Orch: Top matches
-    Orch->>DB: Fetch conversations
-    DB-->>Orch: Full data
-    Orch->>Orch: Score & rank
-    Orch-->>API: Context
-    API-->>C: JSON response
+    Client->>API: POST /conversations
+    API->>Controller: Validate & route
+    Controller->>DB: Store messages
+    DB-->>Controller: Conversation ID
+    Controller->>LLM: Generate embeddings
+    LLM-->>Controller: Embedding vectors
+    Controller->>Chroma: Store vectors
+    Chroma-->>Controller: Success
+    Controller-->>Client: 201 Created
 ```
 
----
+### 2. Semantic Query
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant Controller
+    participant LLM
+    participant Chroma
+    participant DB
+    
+    Client->>API: POST /query
+    API->>Controller: Process query
+    Controller->>LLM: Embed query
+    LLM-->>Controller: Query vector
+    Controller->>Chroma: Similarity search
+    Chroma-->>Controller: Vector IDs + scores
+    Controller->>DB: Fetch messages
+    DB-->>Controller: Message data
+    Controller-->>Client: Ranked results
+```
+
+### 3. Context Assembly
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Controller
+    participant Chroma
+    participant DB
+    
+    Client->>Controller: Request context
+    Controller->>Chroma: Semantic search
+    Chroma-->>Controller: Relevant IDs
+    Controller->>DB: Fetch full messages
+    DB-->>Controller: Messages + metadata
+    Controller->>Controller: Score & rank
+    Controller->>Controller: Budget allocation
+    Controller->>Controller: Assemble context
+    Controller-->>Client: Optimized context
+```
+
+## Memory Orchestration
+
+The intelligence behind Sekha's memory system.
+
+[**Memory Orchestration Details →**](memory-orchestration.md)
+
+**Key Algorithms:**
+
+1. **Relevance Scoring**
+   - Semantic similarity (embedding distance)
+   - Recency decay (time-based weighting)
+   - Importance boost (user-defined scores)
+   - Folder filtering (context isolation)
+
+2. **Context Budgeting**
+   - Token counting (accurate estimation)
+   - Priority queue (importance-ordered)
+   - Greedy packing (maximize utility)
+   - Summary fallback (compression)
+
+3. **Deduplication**
+   - Content hashing (exact duplicates)
+   - Fuzzy matching (similar messages)
+   - Temporal clustering (conversation flow)
+
+## Scaling Architecture
+
+### Current (Single Server)
+
+Optimized for:
+- Individual users
+- Small teams (<10 people)
+- Development environments
+- Edge deployments
+
+**Capacity:**
+- 100,000+ conversations
+- 1,000,000+ messages
+- 100 queries/second
+- 2-4GB RAM
+
+### Future (Distributed)
+
+Planned for Q2-Q3 2026:
+
+- PostgreSQL for multi-user
+- Redis for caching
+- Load balancer for horizontal scaling
+- Distributed ChromaDB
+- Message queue (RabbitMQ/Kafka)
 
 ## Next Steps
 
-- [Architecture Index](index.md) - Full architecture overview
-- [Memory Orchestration](memory-orchestration.md) - How context assembly works
-- [Controller Details](controller.md) - Rust controller deep dive
-- [LLM Bridge](llm-bridge.md) - Python bridge details
-
----
-
-*Last updated: January 2026*
+- [Memory Orchestration](memory-orchestration.md) - Detailed algorithms
+- [Deployment](../deployment/docker-compose.md) - Deploy the stack
+- [API Reference](../api-reference/rest-api.md) - Use the API

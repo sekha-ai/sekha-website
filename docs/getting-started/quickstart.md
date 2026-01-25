@@ -1,19 +1,17 @@
-# Quickstart: Sekha in 5 Minutes
+# Quickstart
 
-Get Sekha running with Docker Compose in under 5 minutes. By the end of this guide, you'll have:
+Get Sekha running in 5 minutes.
 
-- ✅ Sekha Controller running and healthy
-- ✅ ChromaDB for semantic search
-- ✅ Ollama for local embeddings
-- ✅ Your first conversation stored
-- ✅ Semantic search working
+## Prerequisites
 
----
+- Docker 20.10+ with Docker Compose
+- 8GB RAM
+- 20GB free disk space
 
-## Step 1: Clone and Start (2 minutes)
+## 1. Deploy Sekha
 
 ```bash
-# Clone the deployment repository
+# Clone deployment repository
 git clone https://github.com/sekha-ai/sekha-docker.git
 cd sekha-docker
 
@@ -23,18 +21,10 @@ docker compose up -d
 # Wait ~30 seconds for services to initialize
 ```
 
-**What this starts:**
-- `sekha-controller` on port 8080
-- `sekha-bridge` on port 5001
-- `chromadb` on port 8000
-- `ollama` on port 11434
-
----
-
-## Step 2: Verify Health (30 seconds)
+## 2. Verify Installation
 
 ```bash
-# Check controller health
+# Check health
 curl http://localhost:8080/health
 ```
 
@@ -42,34 +32,39 @@ curl http://localhost:8080/health
 ```json
 {
   "status": "healthy",
-  "timestamp": "2026-01-25T14:30:00Z",
+  "version": "0.1.0",
   "checks": {
-    "database": {"status": "ok"},
-    "chroma": {"status": "ok"},
-    "bridge": {"status": "ok"}
+    "database": "ok",
+    "vector_store": "ok",
+    "llm_bridge": "ok"
   }
 }
 ```
 
----
-
-## Step 3: Store Your First Conversation (1 minute)
+## 3. Store Your First Conversation
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/conversations \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer dev-key-replace-in-production" \
   -d '{
-    "label": "First Conversation",
-    "folder": "/personal/test",
+    "label": "My First Conversation",
     "messages": [
       {
         "role": "user",
-        "content": "Hello Sekha! This is my first message."
+        "content": "What is Sekha?"
       },
       {
         "role": "assistant",
-        "content": "Hello! I will remember this conversation forever."
+        "content": "Sekha is a universal memory system for AI that never forgets. It stores, indexes, and retrieves conversations with semantic search."
+      },
+      {
+        "role": "user",
+        "content": "How does it work?"
+      },
+      {
+        "role": "assistant",
+        "content": "Sekha uses embeddings to understand the meaning of conversations, stores them in a vector database, and can retrieve relevant context when you need it."
       }
     ]
   }'
@@ -78,31 +73,23 @@ curl -X POST http://localhost:8080/api/v1/conversations \
 **Response:**
 ```json
 {
-  "id": "123e4567-e89b-12d3-a456-426614174000",
-  "label": "First Conversation",
-  "folder": "/personal/test",
-  "status": "active",
-  "message_count": 2,
-  "created_at": "2026-01-25T14:30:00Z"
+  "id": 1,
+  "label": "My First Conversation",
+  "created_at": "2025-01-01T12:00:00Z",
+  "updated_at": "2025-01-01T12:00:00Z",
+  "message_count": 4
 }
 ```
 
-!!! success "Congratulations!"
-    You just stored your first AI conversation in Sekha!
-
----
-
-## Step 4: Search Semantically (1 minute)
-
-Now search for your conversation using natural language:
+## 4. Search Semantically
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/query \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer dev-key-replace-in-production" \
   -d '{
-    "query": "What was my first message?",
-    "limit": 5
+    "query": "How does semantic search work?",
+    "limit": 3
   }'
 ```
 
@@ -111,174 +98,91 @@ curl -X POST http://localhost:8080/api/v1/query \
 {
   "results": [
     {
-      "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
-      "label": "First Conversation",
-      "similarity_score": 0.94,
-      "messages": [
-        {
-          "role": "user",
-          "content": "Hello Sekha! This is my first message.",
-          "timestamp": "2026-01-25T14:30:00Z"
-        }
-      ]
+      "conversation_id": 1,
+      "message": "Sekha uses embeddings to understand the meaning...",
+      "relevance_score": 0.92,
+      "timestamp": "2025-01-01T12:00:05Z"
     }
   ]
 }
 ```
 
-!!! tip "Semantic Search"
-    Notice how Sekha understood "first message" even though your query didn't use those exact words. This is semantic search in action!
+## 5. Get Context for LLM
 
----
-
-## Step 5: Explore the API (Optional)
-
-Open your browser to view interactive API documentation:
-
+```bash
+curl -X POST http://localhost:8080/api/v1/context/assemble \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer dev-key-replace-in-production" \
+  -d '{
+    "query": "Tell me more about Sekha",
+    "context_budget": 2000
+  }'
 ```
-http://localhost:8080/swagger-ui/
+
+**Response:**
+```json
+{
+  "context": "Previously, we discussed:\n\nWhat is Sekha?\nSekha is a universal memory system for AI that never forgets...\n\nHow does it work?\nSekha uses embeddings to understand the meaning...",
+  "token_count": 145,
+  "sources": [1]
+}
 ```
 
-You can try all 17 API endpoints directly in your browser!
+## What Just Happened?
 
----
+1. **Stored** - Your conversation was saved to SQLite
+2. **Embedded** - Each message was converted to a 768-dim vector
+3. **Indexed** - Vectors stored in ChromaDB for fast similarity search
+4. **Retrieved** - Semantic search found relevant messages
+5. **Assembled** - Context built within your token budget
 
-## What's Next?
+## Next Steps
 
-**Learn the full API:**  
-→ [REST API Reference](../api-reference/rest-api.md)
+### Continue Learning
 
-**Integrate with Claude:**  
-→ [Claude Desktop MCP Setup](../integrations/claude-desktop.md)
+- [First Conversation Guide](first-conversation.md) - Detailed walkthrough
+- [Configuration](configuration.md) - Customize Sekha
+- [API Reference](../api-reference/rest-api.md) - All endpoints
 
-**Organize your memory:**  
-→ [Memory Organization Guide](../guides/organizing-memory.md)
+### Integrate with Tools
 
-**Deploy to production:**  
-→ [Deployment Guides](../deployment/docker-compose.md)
+- [Claude Desktop](../integrations/claude-desktop.md) - MCP integration
+- [Python SDK](../sdks/python-sdk.md) - Build with Python
+- [JavaScript SDK](../sdks/javascript-sdk.md) - Build with JS/TS
 
----
+### Build Something
 
-## Common Next Steps
-
-=== "Store More Conversations"
-
-    ```bash
-    curl -X POST http://localhost:8080/api/v1/conversations \
-      -H "Content-Type: application/json" \
-      -H "Authorization: Bearer dev-key-replace-in-production" \
-      -d '{
-        "label": "Project Planning",
-        "folder": "/work/projects",
-        "importance_score": 8,
-        "messages": [
-          {"role": "user", "content": "Let'\'s plan the new API"},
-          {"role": "assistant", "content": "Great! Here'\'s my suggestion..."}
-        ]
-      }'
-    ```
-
-=== "Update Labels"
-
-    ```bash
-    # Get conversation ID from previous response
-    CONV_ID="123e4567-e89b-12d3-a456-426614174000"
-    
-    curl -X PUT http://localhost:8080/api/v1/conversations/$CONV_ID/label \
-      -H "Content-Type: application/json" \
-      -H "Authorization: Bearer dev-key-replace-in-production" \
-      -d '{
-        "label": "Completed Planning",
-        "folder": "/work/completed"
-      }'
-    ```
-
-=== "Get Context"
-
-    ```bash
-    curl -X POST http://localhost:8080/api/v1/context/assemble \
-      -H "Content-Type: application/json" \
-      -H "Authorization: Bearer dev-key-replace-in-production" \
-      -d '{
-        "query": "Continue working on the API project",
-        "context_budget": 8000
-      }'
-    ```
-
----
+- [AI Coding Assistant](../guides/ai-coding-assistant.md) - Coding helper
+- [Research Assistant](../guides/research-assistant.md) - Research tool
 
 ## Troubleshooting
 
-??? question "Health check fails?"
-
-    **Check if services are running:**
-    ```bash
-    docker compose ps
-    ```
-    
-    **View logs:**
-    ```bash
-    docker compose logs sekha-controller
-    ```
-    
-    **Common fix - restart services:**
-    ```bash
-    docker compose restart
-    ```
-
-??? question "Embedding takes too long?"
-
-    **First-time setup downloads the embedding model (~500MB).**
-    
-    Check Ollama progress:
-    ```bash
-    docker compose logs ollama
-    ```
-    
-    Wait for "successfully pulled nomic-embed-text"
-
-??? question "API returns 401 Unauthorized?"
-
-    **The default API key is `dev-key-replace-in-production`.**
-    
-    Change it in `config.toml`:
-    ```toml
-    [server]
-    api_key = "your-secure-key-min-32-chars-long"
-    ```
-    
-    Then restart:
-    ```bash
-    docker compose restart sekha-controller
-    ```
-
----
-
-## Clean Up (Optional)
-
-To stop and remove all services:
+### Service Won't Start
 
 ```bash
-# Stop services (keeps data)
-docker compose down
+# Check logs
+docker compose logs -f
 
-# Stop and DELETE all data (destructive)
-docker compose down -v
+# Restart services
+docker compose restart
 ```
 
----
+### Health Check Fails
 
-!!! success "You're All Set!"
-    
-    Sekha is now running and you've stored your first conversation. 
-    
-    **Next recommended steps:**
-    
-    1. [Configure for your needs](configuration.md)
-    2. [Set up Claude Desktop integration](../integrations/claude-desktop.md)
-    3. [Explore the full API](../api-reference/rest-api.md)
+```bash
+# Check individual services
+curl http://localhost:8000/api/v1/heartbeat  # ChromaDB
+curl http://localhost:11434/api/version      # Ollama
 
----
+# View controller logs
+docker compose logs controller
+```
 
-[:octicons-arrow-right-24: Full Installation Guide](installation.md){ .md-button }
-[:octicons-arrow-right-24: Configuration](configuration.md){ .md-button }
+### API Returns 401
+
+Check your API key in `.env`:
+```bash
+SEKHA_API_KEY=dev-key-replace-in-production
+```
+
+See [Common Issues](../troubleshooting/common-issues.md) for more help.

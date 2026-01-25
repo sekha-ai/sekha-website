@@ -180,5 +180,7 @@ nav:
   
   - About:
     - about/index.md
+    - The Journey: about/the-journey.md
+    - Roadmap: about/roadmap.md
     - License: about/license.md
     - Support: about/support.md

@@ -137,82 +137,48 @@ nav:
   - Architecture:
     - architecture/index.md
     - System Overview: architecture/overview.md
-    - Controller (Rust): architecture/controller.md
-    - LLM Bridge (Python): architecture/llm-bridge.md
     - Memory Orchestration: architecture/memory-orchestration.md
-    - Data Flow: architecture/data-flow.md
-    - MCP Protocol: architecture/mcp-protocol.md
   
   - Deployment:
     - deployment/index.md
-    - Local Binary: deployment/local-binary.md
     - Docker Compose: deployment/docker-compose.md
-    - Kubernetes: deployment/kubernetes.md
-    - Cloud Providers:
-      - AWS: deployment/aws.md
-      - Azure: deployment/azure.md
-      - GCP: deployment/gcp.md
-    - Security Best Practices: deployment/security.md
+    - Production Guide: deployment/production.md
+    - Security: deployment/security.md
   
   - API Reference:
     - api-reference/index.md
     - REST API: api-reference/rest-api.md
     - MCP Tools: api-reference/mcp-tools.md
-    - Authentication: api-reference/authentication.md
-    - Rate Limiting: api-reference/rate-limiting.md
-    - Error Codes: api-reference/error-codes.md
   
   - SDKs:
     - sdks/index.md
     - Python SDK: sdks/python-sdk.md
     - JavaScript SDK: sdks/javascript-sdk.md
-    - Code Examples: sdks/examples.md
   
   - Integrations:
     - integrations/index.md
-    - Claude Desktop (MCP): integrations/claude-desktop.md
-    - VS Code Extension: integrations/vscode.md
-    - Obsidian Plugin: integrations/obsidian.md
-    - CLI Tool: integrations/cli.md
-    - Custom Integrations: integrations/custom.md
+    - Claude Desktop: integrations/claude-desktop.md
   
   - Guides:
     - guides/index.md
-    - Organizing Memory: guides/organizing-memory.md
-    - Semantic Search: guides/semantic-search.md
-    - Context Assembly: guides/context-assembly.md
-    - Summarization: guides/summarization.md
-    - Pruning Old Data: guides/pruning.md
-    - Backup & Restore: guides/backup-restore.md
-    - Importing Conversations: guides/importing.md
+    - AI Coding Assistant: guides/ai-coding-assistant.md
+    - Research Assistant: guides/research-assistant.md
   
   - Development:
     - development/index.md
     - Contributing: development/contributing.md
-    - Building from Source: development/building.md
     - Testing: development/testing.md
-    - Code Coverage: development/coverage.md
-    - Repository Structure: development/repositories.md
-    - Adding LLM Providers: development/llm-providers.md
   
   - Reference:
     - reference/index.md
-    - Configuration Reference: reference/configuration.md
-    - Environment Variables: reference/environment.md
-    - Database Schema: reference/database.md
-    - Vector Store: reference/vector-store.md
-    - Metrics & Monitoring: reference/metrics.md
+    - Performance Benchmarks: reference/benchmarks.md
   
   - Troubleshooting:
     - troubleshooting/index.md
     - Common Issues: troubleshooting/common-issues.md
-    - Performance Tuning: troubleshooting/performance.md
-    - Debugging: troubleshooting/debugging.md
     - FAQ: troubleshooting/faq.md
   
   - About:
     - about/index.md
-    - The Journey: about/the-journey.md
-    - Roadmap: about/roadmap.md
     - License: about/license.md
-    - Support & Contact: about/support.md
+    - Support: about/support.md

@@ -143,6 +143,8 @@ nav:
     - deployment/index.md
     - Docker Compose: deployment/docker-compose.md
     - Production Guide: deployment/production.md
+    - Kubernetes: deployment/kubernetes.md
+    - Monitoring: deployment/monitoring.md
     - Security: deployment/security.md
   
   - API Reference:
@@ -158,25 +160,36 @@ nav:
   - Integrations:
     - integrations/index.md
     - Claude Desktop: integrations/claude-desktop.md
+    - VS Code: integrations/vscode.md
   
   - Guides:
     - guides/index.md
     - AI Coding Assistant: guides/ai-coding-assistant.md
     - Research Assistant: guides/research-assistant.md
+    - Organizing Memory: guides/organizing-memory.md
+    - Semantic Search: guides/semantic-search.md
   
   - Development:
     - development/index.md
     - Contributing: development/contributing.md
     - Testing: development/testing.md
   
+  - Advanced:
+    - advanced/index.md
+    - Scaling Guide: advanced/scaling.md
+  
   - Reference:
     - reference/index.md
     - Performance Benchmarks: reference/benchmarks.md
+    - Configuration: reference/configuration.md
+    - Metrics: reference/metrics.md
   
   - Troubleshooting:
     - troubleshooting/index.md
     - Common Issues: troubleshooting/common-issues.md
     - FAQ: troubleshooting/faq.md
+    - Debugging: troubleshooting/debugging.md
+    - Performance: troubleshooting/performance.md
   
   - About:
     - about/index.md

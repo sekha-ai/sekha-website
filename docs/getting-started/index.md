@@ -131,5 +131,5 @@ Managed deployment options:
 Or explore:
 
 - [Architecture](../architecture/overview.md) - How it works
-- [Integrations](../integrations/) - Connect to tools
-- [Guides](../guides/) - Use case examples
+- [Integrations](../integrations/index.md) - Connect to tools
+- [Guides](../guides/index.md) - Use case examples

@@ -196,4 +196,4 @@ Contribute to SDK development:
 - [Python SDK](python-sdk.md) - Full Python documentation
 - [JavaScript SDK](javascript-sdk.md) - Full JS/TS documentation
 - [API Reference](../api-reference/rest-api.md) - REST API docs
-- [Guides](../guides/) - Use case examples
+- [Guides](../guides/index.md) - Use case examples

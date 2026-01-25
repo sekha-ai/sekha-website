@@ -583,7 +583,7 @@ Contact: [hello@sekha.dev](mailto:hello@sekha.dev)
 
 ## Still have questions?
 
-- 📖 Check our [full documentation](/)
+- 📖 Check our [full documentation](../index.md)
 - 💬 Ask on [Discord](https://discord.gg/sekha)
 - 🐛 Report issues on [GitHub](https://github.com/sekha-ai/sekha-controller/issues)
 - 📧 Email us: [hello@sekha.dev](mailto:hello@sekha.dev)

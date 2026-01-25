@@ -2,6 +2,14 @@
 
 {# Custom overrides for Material theme #}
 
+{# Add favicons and touch icons #}
+{% block extrahead %}
+  <link rel="icon" type="image/x-icon" href="{{ 'assets/favicon.ico' | url }}">
+  <link rel="icon" type="image/png" href="{{ 'assets/logo.png' | url }}">
+  <link rel="apple-touch-icon" href="{{ 'assets/logo.png' | url }}">
+  <meta name="theme-color" content="#4f46e5">
+{% endblock %}
+
 {# Add custom footer content #}
 {% block footer %}
   {{ super() }}

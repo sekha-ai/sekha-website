@@ -1,1 +1,2 @@
-# Overrides directory for MkDocs Material theme customization
+# Theme overrides directory
+# Place custom HTML templates here to override Material theme defaults

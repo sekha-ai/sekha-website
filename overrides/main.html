@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{# Custom overrides for Material theme #}
+
+{# Add custom footer content #}
+{% block footer %}
+  {{ super() }}
+  <div class="md-footer-meta__inner md-grid">
+    <div class="md-footer-custom">
+      <p>
+        Built with <a href="https://www.mkdocs.org/" target="_blank">MkDocs</a> 
+        and <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank">Material for MkDocs</a>
+      </p>
+    </div>
+  </div>
+{% endblock %}

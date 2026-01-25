@@ -1,3 +1,81 @@
-/* Custom CSS for Sekha Documentation */
+/* Sekha Documentation - Custom Styles */
 
-/* Add custom styles here */
+:root {
+  /* Custom color overrides */
+  --md-primary-fg-color: #4f46e5;  /* Indigo */
+  --md-accent-fg-color: #7c3aed;   /* Purple */
+}
+
+/* Custom code block styling */
+.highlight {
+  border-radius: 0.5rem;
+}
+
+/* Improve table readability */
+table {
+  font-size: 0.9em;
+}
+
+table th {
+  background-color: var(--md-primary-fg-color--light);
+  font-weight: 600;
+}
+
+/* Admonition custom styles */
+.admonition {
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Code copy button hover effect */
+.md-clipboard:hover {
+  background-color: var(--md-accent-fg-color);
+}
+
+/* Custom footer styling */
+.md-footer-custom {
+  text-align: center;
+  padding: 1rem 0;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.md-footer-custom a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* Improve navigation readability */
+.md-nav__link--active {
+  font-weight: 600;
+}
+
+/* Better spacing for lists */
+ul li, ol li {
+  margin-bottom: 0.5em;
+}
+
+/* Code inline styling */
+code {
+  padding: 0.2em 0.4em;
+  border-radius: 0.3em;
+  font-size: 0.9em;
+}
+
+/* Improve search highlight */
+.md-search-result__article--document {
+  border-radius: 0.5rem;
+}
+
+/* Custom homepage hero section (if needed) */
+.md-typeset .hero {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+/* Better mobile responsiveness */
+@media screen and (max-width: 76.1875em) {
+  .md-typeset table {
+    font-size: 0.8em;
+  }
+}

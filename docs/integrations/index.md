@@ -1,123 +1,262 @@
 # Integrations
 
-Integrate Sekha with your favorite tools and workflows.
+Integrate Sekha with your tools and workflows.
 
-## Official Integrations
+## Available Integrations
 
-### [Claude Desktop (MCP)](claude-desktop.md)
+### Official Integrations
 
-Use Sekha directly in Claude Desktop via Model Context Protocol.
+- [**Claude Desktop**](claude-desktop.md) - Native MCP integration for Claude
 
-**Status:** ✅ Production Ready
+### Coming Soon
 
-**Features:**
-- 7 MCP tools available in Claude
-- Automatic memory injection
-- Seamless conversation storage
+Planned integrations for Q1-Q2 2026:
 
-### [VS Code Extension](vscode.md)
+- **VS Code Extension** - Memory-aware coding assistant
+- **Obsidian Plugin** - Sync notes with Sekha memory
+- **CLI Tool** - Command-line memory management
+- **Custom Integrations** - Build your own with SDKs
 
-Manage memory directly from your code editor.
+## Integration Methods
 
-**Status:** 🚧 Beta
+### 1. Model Context Protocol (MCP)
 
-**Features:**
-- Inline memory search
-- Context snippets
-- Conversation sidebar
-- Quick storage commands
+**Best for:** LLM applications (Claude, ChatGPT, etc.)
 
-### [Obsidian Plugin](obsidian.md)
-
-Connect your Obsidian knowledge base to Sekha memory.
-
-**Status:** 🚧 Early Stage
-
-**Features:**
-- Sync notes to Sekha
-- Search from Obsidian
-- Bidirectional linking
-
-### [CLI Tool](cli.md)
-
-Powerful command-line interface for terminal workflows.
-
-**Status:** 🚧 Beta
-
-**Features:**
-- Query memory from terminal
-- Store conversations
-- Manage labels and folders
-- Export and backup
-
-## Integration Patterns
-
-### Direct API Integration
-
-Integrate via REST API from any application:
-
-```bash
-curl -X POST http://localhost:8080/api/v1/conversations \
-  -H "Authorization: Bearer your-api-key" \
-  -H "Content-Type: application/json" \
-  -d @conversation.json
-```
-
-**[→ REST API Reference](../api-reference/rest-api.md)**
-
-### SDK Integration
-
-Use official SDKs for Python or JavaScript:
-
-```python
-from sekha import SekhaClient
-
-client = SekhaClient(api_key="your-key")
-result = client.store_conversation(...)
-```
-
-**[→ SDK Documentation](../sdks/index.md)**
-
-### MCP Protocol
-
-Implement MCP in your application:
+MCP provides standardized tools that LLMs can call:
 
 ```json
 {
   "mcpServers": {
     "sekha": {
-      "command": "sekha-mcp",
-      "args": ["--config", "config.toml"]
+      "command": "node",
+      "args": ["/path/to/sekha-mcp-server/build/index.js"],
+      "env": {
+        "SEKHA_API_URL": "http://localhost:8080",
+        "SEKHA_API_KEY": "your-api-key"
+      }
     }
   }
 }
 ```
 
-**[→ MCP Tools Reference](../api-reference/mcp-tools.md)**
+**Available MCP Tools:**
+- `create_memory` - Store new conversation
+- `search_memory` - Semantic search
+- `get_memory` - Retrieve by ID
+- `assemble_context` - Get relevant context
+- `list_labels` - Browse memory organization
+- `get_statistics` - Memory stats
+- `delete_memory` - Remove conversation
 
-## Community Integrations
+See [MCP Tools Reference](../api-reference/mcp-tools.md) for details.
 
-Community-built integrations:
+### 2. REST API
 
-- **Raycast Extension** - *Coming soon*
-- **Alfred Workflow** - *Coming soon*
-- **Emacs Package** - *Coming soon*
-- **Vim Plugin** - *Coming soon*
+**Best for:** Web applications, mobile apps, custom tools
+
+Direct HTTP integration:
+
+```bash
+curl -X POST http://localhost:8080/conversations/search \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "machine learning projects",
+    "limit": 10
+  }'
+```
+
+See [REST API Reference](../api-reference/rest-api.md) for all endpoints.
+
+### 3. SDKs
+
+**Best for:** Python and JavaScript applications
+
+**Python:**
+
+```python
+from sekha_sdk import SekhaClient
+
+client = SekhaClient(
+    api_url="http://localhost:8080",
+    api_key="your-api-key"
+)
+
+results = client.search(query="authentication", limit=5)
+```
+
+**JavaScript:**
+
+```javascript
+import { SekhaClient } from '@sekha/sdk';
+
+const client = new SekhaClient({
+  apiUrl: 'http://localhost:8080',
+  apiKey: 'your-api-key'
+});
+
+const results = await client.search('authentication', { limit: 5 });
+```
+
+See [SDK Documentation](../sdks/index.md) for complete guides.
+
+## Example Integrations
+
+### Slack Bot
+
+```python
+from slack_bolt import App
+from sekha_sdk import SekhaClient
+
+app = App(token=os.environ["SLACK_BOT_TOKEN"])
+sekha = SekhaClient(api_url="http://localhost:8080")
+
+@app.message("search")
+def search_memory(message, say):
+    query = message["text"].replace("search", "").strip()
+    results = sekha.search(query, limit=3)
+    
+    response = "Found:\n"
+    for r in results:
+        response += f"\u2022 {r.title}\n"
+    
+    say(response)
+```
+
+### Jupyter Notebook
+
+```python
+import sekha_sdk
+import pandas as pd
+
+# Connect to Sekha
+client = sekha_sdk.SekhaClient(api_url="http://localhost:8080")
+
+# Get research notes
+notes = client.search("experiment results", limit=50)
+
+# Convert to DataFrame for analysis
+df = pd.DataFrame([{
+    'title': n.title,
+    'content': n.content,
+    'created_at': n.created_at,
+    'importance': n.importance
+} for n in notes])
+
+# Analyze
+df.describe()
+```
+
+### Chrome Extension
+
+```javascript
+// background.js
+import { SekhaClient } from '@sekha/sdk';
+
+const sekha = new SekhaClient({
+  apiUrl: 'http://localhost:8080',
+  apiKey: await getApiKey()
+});
+
+// Save current page to memory
+chrome.action.onClicked.addListener(async (tab) => {
+  await sekha.conversations.create({
+    title: tab.title,
+    content: `Saved from: ${tab.url}`,
+    labels: ['web', 'research']
+  });
+  
+  alert('Saved to Sekha!');
+});
+```
 
 ## Building Custom Integrations
 
-Want to build your own integration?
+### Authentication
 
-**[→ Custom Integration Guide](custom.md)**
+All integrations must authenticate:
 
-Learn how to:
-- Authenticate with Sekha API
-- Handle conversation storage
-- Implement semantic search
-- Build context-aware features
+```bash
+Authorization: Bearer YOUR_API_KEY
+```
 
-## Need Help?
+Generate a secure API key:
 
-- [API Reference](../api-reference/index.md)
-- [Discord Community](https://discord.gg/sekha)
-- [Contributing Guide](../development/contributing.md)
+```bash
+openssl rand -base64 32
+```
+
+Configure in `~/.sekha/config.toml`:
+
+```toml
+[server]
+api_key = "sk-sekha-generated-key-here"
+```
+
+### Rate Limiting
+
+Default limits:
+- 100 requests/second
+- 200 burst size
+
+Handle rate limit errors (HTTP 429):
+
+```python
+import time
+from requests.exceptions import HTTPError
+
+def safe_request(func):
+    max_retries = 3
+    for i in range(max_retries):
+        try:
+            return func()
+        except HTTPError as e:
+            if e.response.status_code == 429:
+                time.sleep(2 ** i)  # Exponential backoff
+            else:
+                raise
+```
+
+### Error Handling
+
+Handle common errors:
+
+```python
+try:
+    result = client.search(query)
+except sekha_sdk.AuthenticationError:
+    print("Invalid API key")
+except sekha_sdk.RateLimitError:
+    print("Too many requests, slow down")
+except sekha_sdk.ServerError:
+    print("Sekha server error")
+except sekha_sdk.NetworkError:
+    print("Cannot reach Sekha server")
+```
+
+## Integration Checklist
+
+Before deploying:
+
+- [ ] API key stored securely (environment variable)
+- [ ] Error handling implemented
+- [ ] Rate limiting respected
+- [ ] HTTPS used in production
+- [ ] Logging configured
+- [ ] Health check endpoint monitored
+- [ ] Backup/retry logic in place
+
+## Community Integrations
+
+Share your integration:
+
+- [GitHub Discussions](https://github.com/sekha-ai/sekha-controller/discussions)
+- [Discord #integrations](https://discord.gg/sekha)
+
+## Next Steps
+
+- [**Claude Desktop Integration**](claude-desktop.md) - Set up Claude with Sekha
+- [**REST API Reference**](../api-reference/rest-api.md) - All endpoints
+- [**MCP Tools Reference**](../api-reference/mcp-tools.md) - MCP tool details
+- [**SDK Documentation**](../sdks/index.md) - Python and JavaScript SDKs

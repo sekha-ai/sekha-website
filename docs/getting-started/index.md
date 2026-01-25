@@ -1,117 +1,124 @@
-# Getting Started with Sekha
+# Getting Started
 
-Welcome to Sekha! This guide will help you go from zero to storing your first AI conversation in under 10 minutes.
+Get Sekha Controller up and running in minutes.
 
-## What You'll Learn
+## Quick Links
 
-- [Quickstart](quickstart.md) - 5-minute setup with Docker Compose
-- [Installation](installation.md) - All installation methods (Docker, binary, source)
-- [Configuration](configuration.md) - Customize Sekha for your needs
-- [First Conversation](first-conversation.md) - Store and retrieve your first memory
+- [**Quickstart**](quickstart.md) - 5-minute setup with Docker
+- [**Installation**](installation.md) - All installation methods
+- [**Configuration**](configuration.md) - Configure Sekha for your needs
+- [**First Conversation**](first-conversation.md) - Create your first memory
 
-## Prerequisites
+## What You'll Need
 
-Before starting, ensure you have:
+### Minimum Requirements
 
-**For Docker installation (recommended):**
-- Docker Desktop or Docker Engine 24.0+
-- Docker Compose 2.0+
-- 4GB free disk space
-- 2GB available RAM
+- **OS:** Linux, macOS, or Windows (with WSL2)
+- **CPU:** 2+ cores
+- **RAM:** 4GB minimum, 8GB recommended
+- **Disk:** 10GB free space
+- **Docker:** 20.10+ (for Docker installation)
 
-**For local binary:**
-- Ollama (for embeddings) or OpenAI API key
-- 2GB free disk space
-- 1GB available RAM
+### Optional (for advanced features)
 
-## Choose Your Path
+- **PostgreSQL** - For multi-user deployments
+- **Kubernetes** - For high-availability deployments (Q2 2026)
+- **Reverse Proxy** - nginx/Caddy for TLS termination
 
-=== "Quickest: Docker"
+## Installation Options
 
-    **Best for:** First-time users, testing, teams
-    
-    ```bash
-    git clone https://github.com/sekha-ai/sekha-docker.git
-    cd sekha-docker
-    docker compose up -d
-    ```
-    
-    [:octicons-arrow-right-24: Full Quickstart Guide](quickstart.md)
+### 1. Docker Compose (Recommended)
 
-=== "Flexible: Local Binary"
+**Best for:** Quick start, development, single-server deployments
 
-    **Best for:** Developers, custom setups
-    
-    ```bash
-    cargo install --git https://github.com/sekha-ai/sekha-controller
-    sekha-controller setup
-    sekha-controller start
-    ```
-    
-    [:octicons-arrow-right-24: Installation Guide](installation.md)
+```bash
+# Clone repository
+git clone https://github.com/sekha-ai/sekha-controller.git
+cd sekha-controller
 
-=== "Production: Kubernetes"
+# Start all services
+docker-compose up -d
 
-    **Best for:** Enterprises, scale, HA
-    
-    ```bash
-    helm install sekha sekha/sekha-controller
-    ```
-    
-    [:octicons-arrow-right-24: Deployment Guide](../deployment/kubernetes.md)
-
-## What Gets Installed
-
-A complete Sekha deployment includes:
-
-**Core Services:**
-- **Sekha Controller** (Rust) - Memory engine and API server
-- **LLM Bridge** (Python) - Embeddings and summarization
-- **ChromaDB** - Vector database for semantic search
-- **SQLite or PostgreSQL** - Structured data storage
-
-**Optional Services:**
-- **Ollama** - Local LLM runtime (free, private)
-- **Redis** - Caching and task queue (for scale)
-
-## System Architecture
-
-```mermaid
-graph TD
-    A[Your Application] -->|HTTP/MCP| B[Sekha Controller]
-    B -->|Store| C[SQLite/Postgres]
-    B -->|Embed| D[LLM Bridge]
-    B -->|Search| E[ChromaDB]
-    D -->|Generate| F[Ollama/OpenAI]
-    
-    style B fill:#4051b5
-    style D fill:#805ad5
+# Verify
+curl http://localhost:8080/health
 ```
+
+**Includes:**
+- Sekha Controller
+- ChromaDB (vector store)
+- Ollama (local LLM)
+- SQLite (database)
+
+[**Full Docker Compose Guide →**](../deployment/docker-compose.md)
+
+### 2. Binary Installation
+
+**Best for:** Lightweight deployments, custom setups
+
+```bash
+# Download latest release
+wget https://github.com/sekha-ai/sekha-controller/releases/latest/download/sekha-controller-linux-amd64
+
+# Make executable
+chmod +x sekha-controller-linux-amd64
+
+# Run
+./sekha-controller-linux-amd64
+```
+
+**Requires:**
+- ChromaDB running separately
+- Ollama running separately
+
+[**Full Installation Guide →**](installation.md)
+
+### 3. Cloud Deployments
+
+**Best for:** Production, scalability, managed infrastructure
+
+**Coming Soon** (Q2 2026):
+- Kubernetes Helm charts
+- AWS deployment guide
+- Azure deployment guide
+- GCP deployment guide
 
 ## Next Steps
 
-Depending on your goal:
+After installation:
 
-**Just exploring?**  
-→ Start with the [Quickstart](quickstart.md) (5 minutes)
+1. [**Configure Sekha**](configuration.md) - Set API keys, database, LLM providers
+2. [**Create First Conversation**](first-conversation.md) - Test your installation
+3. [**Integrate with Tools**](../integrations/index.md) - Claude Desktop, SDKs, APIs
 
-**Ready to deploy?**  
-→ See [Installation Options](installation.md)
+## Learning Path
 
-**Need to customize?**  
-→ Review [Configuration](configuration.md)
+### For End Users
 
-**Want to integrate?**  
-→ Check [API Reference](../api-reference/rest-api.md)
+1. ✅ [Quickstart](quickstart.md) - Get running
+2. ✅ [First Conversation](first-conversation.md) - Basic usage
+3. ✅ [Claude Desktop Integration](../integrations/claude-desktop.md) - Use with Claude
+4. ✅ [Guides](../guides/index.md) - Practical examples
 
----
+### For Developers
 
-!!! question "Need Help?"
+1. ✅ [Installation](installation.md) - All install methods
+2. ✅ [Configuration](configuration.md) - Detailed config
+3. ✅ [REST API Reference](../api-reference/rest-api.md) - API docs
+4. ✅ [SDK Documentation](../sdks/index.md) - Python/JavaScript SDKs
+5. ✅ [Architecture](../architecture/index.md) - How it works
 
-    - [:material-github: GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues)
-    - [:simple-discord: Discord Community](https://discord.gg/sekha)
-    - [:material-email: Email Support](mailto:hello@sekha.dev)
+### For Operators
 
----
+1. ✅ [Docker Compose](../deployment/docker-compose.md) - Deploy with Docker
+2. ✅ [Production Guide](../deployment/production.md) - Production best practices
+3. ✅ [Security](../deployment/security.md) - Harden your deployment
+4. ✅ [Troubleshooting](../troubleshooting/index.md) - Fix common issues
 
-[:octicons-arrow-right-24: Start Quickstart](quickstart.md){ .md-button .md-button--primary }
+## Support
+
+Need help?
+
+- **Discord:** [discord.gg/sekha](https://discord.gg/sekha)
+- **GitHub Discussions:** [Ask questions](https://github.com/sekha-ai/sekha-controller/discussions)
+- **Documentation:** [docs.sekha.dev](https://docs.sekha.dev)
+- **Email:** hello@sekha.dev

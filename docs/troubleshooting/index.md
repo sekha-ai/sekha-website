@@ -1,43 +1,35 @@
 # Troubleshooting
 
-Solutions to common problems and debugging tips.
+Common issues and solutions.
 
-## Quick Links
+## Quick Diagnosis
 
-- [**Common Issues**](common-issues.md) - Solutions to frequent problems
-- [**FAQ**](faq.md) - Frequently asked questions
+### Health Check
 
-## Quick Checks
-
-### Is Sekha Running?
+First, check system health:
 
 ```bash
 curl http://localhost:8080/health
 ```
 
-Expected response:
+**Expected response:**
 ```json
 {
   "status": "healthy",
-  "database": "ok",
-  "vector_store": "ok",
-  "llm": "ok"
+  "checks": {
+    "database": "ok",
+    "vector_store": "ok",
+    "llm_bridge": "ok"
+  }
 }
 ```
 
-### Check Logs
+### Component Status
 
 ```bash
-# Docker
-docker logs sekha-controller
+# Controller
+curl http://localhost:8080/health
 
-# Binary
-tail -f ~/.sekha/logs/controller.log
-```
-
-### Check Dependencies
-
-```bash
 # ChromaDB
 curl http://localhost:8000/api/v1/heartbeat
 
@@ -45,260 +37,127 @@ curl http://localhost:8000/api/v1/heartbeat
 curl http://localhost:11434/api/version
 ```
 
-## Common Error Messages
+## Common Issues
 
-### "Connection refused"
+Comprehensive troubleshooting guide:
 
-**Cause:** Sekha controller not running or wrong port
+[**Common Issues →**](common-issues.md)
 
-**Solution:**
+- Connection errors
+- Database issues
+- Embedding generation failures
+- Performance problems
+- Memory issues
+
+## FAQ
+
+Frequently asked questions:
+
+[**FAQ →**](faq.md)
+
+- General questions
+- Configuration
+- Performance
+- Integrations
+- Development
+
+## Debug Mode
+
+Enable verbose logging:
+
 ```bash
-# Check if running
-docker ps | grep sekha-controller
+# Set log level
+export RUST_LOG=debug
 
-# Check config
-cat ~/.sekha/config.toml | grep port
-
-# Restart
-docker-compose restart sekha-controller
-```
-
-### "Unauthorized" (HTTP 401)
-
-**Cause:** Missing or invalid API key
-
-**Solution:**
-```bash
-# Check your API key in config
-cat ~/.sekha/config.toml | grep api_key
-
-# Use in requests
-curl -H "Authorization: Bearer YOUR_API_KEY" \
-  http://localhost:8080/conversations
-```
-
-### "Too Many Requests" (HTTP 429)
-
-**Cause:** Rate limit exceeded
-
-**Solution:**
-```bash
-# Increase limits in config.toml
-[rate_limiting]
-requests_per_second = 200  # Increase from 100
-burst_size = 400           # Increase from 200
-
-# Restart controller
-docker-compose restart sekha-controller
-```
-
-### "ChromaDB connection failed"
-
-**Cause:** ChromaDB not running or wrong URL
-
-**Solution:**
-```bash
-# Check if running
-docker ps | grep chroma
-
-# Test connection
-curl http://localhost:8000/api/v1/heartbeat
-
-# Check config
-cat ~/.sekha/config.toml | grep chroma_url
-
-# Restart ChromaDB
-docker-compose restart chroma
-```
-
-### "Ollama model not found"
-
-**Cause:** Embedding model not pulled
-
-**Solution:**
-```bash
-# Pull the model
-docker exec sekha-ollama ollama pull nomic-embed-text
-
-# Verify
-docker exec sekha-ollama ollama list
+# Or in config.toml
+[logging]
+level = "debug"
 ```
 
 ## Performance Issues
 
-### Slow Searches
+If queries are slow:
 
-**Diagnosis:**
+1. **Check Database Size**
+   ```bash
+   ls -lh data/sekha.db
+   ```
+
+2. **Check ChromaDB**
+   ```bash
+   docker stats chroma
+   ```
+
+3. **Monitor Resources**
+   ```bash
+   docker stats
+   ```
+
+4. **Enable Query Logging**
+   ```toml
+   [logging]
+   sql_queries = true
+   ```
+
+## Debugging Tips
+
+### Enable Detailed Logs
+
 ```bash
-# Check vector store size
-curl http://localhost:8000/api/v1/collections/sekha_memory
+# Full debug output
+export RUST_LOG=sekha=debug,sea_orm=debug
 
-# Check database size
-ls -lh ~/.sekha/data/sekha.db
+# Restart service
+docker compose restart controller
 ```
 
-**Solutions:**
-1. **Archive old conversations** - Reduce active dataset
-2. **Increase resources** - More RAM for ChromaDB
-3. **Optimize queries** - Use filters to narrow search
+### Check Logs
 
-### High Memory Usage
-
-**Diagnosis:**
 ```bash
-# Check container stats
-docker stats sekha-controller sekha-chroma sekha-ollama
+# All logs
+docker compose logs -f
+
+# Specific service
+docker compose logs -f controller
+docker compose logs -f chroma
+docker compose logs -f llm-bridge
 ```
 
-**Solutions:**
-1. **Limit Docker memory** - Set in docker-compose.yml
-2. **Reduce batch size** - Lower embedding batch_size in config
-3. **Enable swap** - If on limited RAM system
+### Inspect Database
 
-### Slow Embedding Generation
-
-**Diagnosis:**
 ```bash
-# Check Ollama performance
-time docker exec sekha-ollama ollama run nomic-embed-text "test"
-```
+# Open SQLite
+sqlite3 data/sekha.db
 
-**Solutions:**
-1. **Use GPU** - Configure Ollama with GPU support
-2. **Reduce batch size** - Process fewer embeddings at once
-3. **Use remote embeddings** - OpenAI API (faster but costs money)
+# Check tables
+.tables
 
-## Data Issues
-
-### Missing Conversations
-
-**Check database:**
-```bash
-# Enter SQLite shell
-sqlite3 ~/.sekha/data/sekha.db
-
-# Count conversations
+# Query conversations
 SELECT COUNT(*) FROM conversations;
-
-# Check specific conversation
-SELECT * FROM conversations WHERE title LIKE '%search term%';
-```
-
-### Corrupted Database
-
-**Recovery steps:**
-```bash
-# 1. Stop controller
-docker-compose stop sekha-controller
-
-# 2. Check integrity
-sqlite3 ~/.sekha/data/sekha.db "PRAGMA integrity_check;"
-
-# 3. Restore from backup
-cp ~/.sekha/backups/sekha-2026-01-25.db ~/.sekha/data/sekha.db
-
-# 4. Restart
-docker-compose start sekha-controller
-```
-
-### Vector Embeddings Missing
-
-**Regenerate embeddings:**
-```bash
-# Via API
-curl -X POST http://localhost:8080/admin/reindex \
-  -H "Authorization: Bearer YOUR_API_KEY"
-
-# Or manually
-docker exec sekha-controller sekha-cli reindex-all
-```
-
-## Debugging
-
-### Enable Debug Logging
-
-**In config.toml:**
-```toml
-[logging]
-level = "debug"  # Change from "info"
-format = "pretty" # Easier to read than JSON
-```
-
-**Restart:**
-```bash
-docker-compose restart sekha-controller
-```
-
-### Test API Manually
-
-```bash
-# Create test conversation
-curl -X POST http://localhost:8080/conversations \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Test",
-    "content": "Testing 123",
-    "labels": ["test"],
-    "importance": 5
-  }' | jq
-
-# Search for it
-curl -X POST http://localhost:8080/conversations/search \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "testing", "limit": 5}' | jq
-```
-
-### Check Database Schema
-
-```bash
-sqlite3 ~/.sekha/data/sekha.db ".schema conversations"
 ```
 
 ## Getting Help
 
+### Community Support
+
+- [Discord](https://discord.gg/sekha) - Real-time help
+- [GitHub Discussions](https://github.com/sekha-ai/sekha-controller/discussions) - Q&A forum
+- [GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues) - Bug reports
+
 ### Before Asking
 
-1. Check [Common Issues](common-issues.md)
-2. Check [FAQ](faq.md)
-3. Search [GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues)
-4. Enable debug logging and capture error messages
+Include:
 
-### Where to Ask
-
-- **Discord:** [discord.gg/sekha](https://discord.gg/sekha) - Quick help
-- **GitHub Discussions:** [Discussions](https://github.com/sekha-ai/sekha-controller/discussions) - Q&A
-- **GitHub Issues:** [Issues](https://github.com/sekha-ai/sekha-controller/issues) - Bug reports
-
-### What to Include
-
-```
-**Environment:**
-- OS: 
-- Sekha version: 
-- Docker version: 
-- Deployment method: 
-
-**Issue:**
-- What you're trying to do:
-- What happens instead:
-- Error messages:
-
-**Logs:**
-```
-(paste relevant logs here)
-```
-
-**Config:**
-```toml
-(paste config.toml, remove api_key)
-```
-```
+1. **System info**: OS, Docker version
+2. **Logs**: Relevant error messages
+3. **Config**: Sanitized configuration
+4. **Steps**: How to reproduce
+5. **Expected**: What should happen
+6. **Actual**: What actually happens
 
 ## Next Steps
 
-- [**Common Issues**](common-issues.md) - Detailed solutions
-- [**FAQ**](faq.md) - Frequently asked questions
-- [**Configuration Guide**](../getting-started/configuration.md) - Config reference
-- [**Deployment Guide**](../deployment/production.md) - Production best practices
+- [Common Issues](common-issues.md) - Detailed troubleshooting
+- [FAQ](faq.md) - Quick answers
+- [Configuration](../getting-started/configuration.md) - Config reference
+- [Deployment](../deployment/docker-compose.md) - Setup guide

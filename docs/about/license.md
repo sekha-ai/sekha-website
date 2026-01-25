@@ -1,296 +1,266 @@
 # License
 
-Sekha is available under a **dual license** structure: open source for personal and non-commercial use, and commercial licensing for businesses.
+## Dual Licensing Model
+
+Sekha uses a **fair dual-license model** designed to support both open-source principles and sustainable development.
 
 ---
 
-## Open Source License (AGPL-3.0)
+## Free & Open Source License
 
-**For personal, educational, and non-commercial use**
+### AGPL-3.0 (GNU Affero General Public License v3.0)
 
-Sekha is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](https://www.gnu.org/licenses/agpl-3.0.en.html).
+**Who Can Use It Free:**
 
-### What This Means
+- ✅ **Individuals** - Personal projects, learning, experimentation
+- ✅ **Students & Academics** - Research, education, coursework
+- ✅ **Non-Profits** - Charitable organizations, NGOs
+- ✅ **Small Businesses** - Companies with fewer than 50 employees
+- ✅ **Open Source Projects** - Building on Sekha with compatible licenses
 
-✅ **You CAN:**
+**Key Terms:**
 
-- Use Sekha freely for personal projects
-- Use Sekha in educational settings (universities, boot camps, courses)
-- Modify the source code for your own needs
-- Deploy Sekha on your own infrastructure
-- Contribute improvements back to the project
-- Use Sekha in open-source projects (also under AGPL or compatible licenses)
+1. **Free Forever** - No usage limits, no feature restrictions, no time limits
+2. **Modify Freely** - Change, extend, and customize the code as needed
+3. **Share Modifications** - If you distribute modified versions, you must:
+   - Publish your modifications under AGPL-3.0
+   - Provide source code to users
+   - Maintain copyright and license notices
+4. **Network Use = Distribution** - If you run a modified Sekha service that others access over a network, you must make your source code available
 
-⚠️ **You MUST:**
+**What You Can Build:**
 
-- **Disclose source code** - If you modify Sekha, you must make your modifications available under AGPL-3.0
-- **Provide network access** - If you run a modified version on a server (e.g., SaaS), you must provide users access to the modified source code
-- **Preserve copyright notices** - Keep all existing copyright and license notices intact
-- **License derivatives under AGPL** - Any derivative work must also be licensed under AGPL-3.0
+- Commercial products (if you open-source derivative works)
+- SaaS applications (if you publish modifications)
+- Internal tools (no distribution = no requirement to publish)
+- Research prototypes
+- Educational materials
 
-❌ **You CANNOT:**
+**Example Use Cases:**
 
-- Use Sekha in **commercial/proprietary software** without a commercial license
-- Offer Sekha as a **paid service** without a commercial license
-- Use Sekha in a **closed-source commercial product**
-- Remove or modify license notices
+!!! example "Individual Developer"
+    Sarah builds a personal AI assistant using Sekha for her career-spanning notes. She uses the LLM bridge and adds custom summarization logic.
+    
+    **License Status:** Free under AGPL-3.0 ✅  
+    **Requirement:** None (personal use, not distributed)
+
+!!! example "Startup (40 Employees)"
+    TechCorp uses Sekha internally to power their customer support AI agents. They modify the context assembly algorithm and deploy it on their servers.
+    
+    **License Status:** Free under AGPL-3.0 ✅  
+    **Requirement:** Internal use only - no publication needed
+
+!!! example "Open Source SaaS"
+    MemoryCloud builds a hosted Sekha service and makes their modifications public on GitHub under AGPL-3.0.
+    
+    **License Status:** Free under AGPL-3.0 ✅  
+    **Requirement:** Publish modifications (already doing so) ✅
 
 ---
 
 ## Commercial License
 
-**For businesses, SaaS providers, and proprietary software**
+### Sekha Enterprise License
 
-If you want to:
+**Who Needs a Commercial License:**
 
-- 💼 Use Sekha in a commercial product without releasing your source code
-- ☁️ Offer Sekha as a paid SaaS service
-- 🔒 Keep your modifications private
-- 🛡️ Receive dedicated support and SLAs
-- 🚢 Get priority feature development
+- ⚖️ **Large Companies** - 50+ employees
+- ⚖️ **AI Vendors** - Companies building LLM products (OpenAI, Anthropic, etc.)
+- ⚖️ **Closed-Source SaaS** - Want to offer Sekha without publishing modifications
+- ⚖️ **Cloud Providers** - AWS, Azure, GCP offering managed Sekha
+- ⚖️ **Enterprises** - Need legal certainty, indemnification, or support SLAs
 
-**Contact us for a commercial license:**
+### Pricing Tiers
 
-- **Email:** [licensing@sekha.dev](mailto:licensing@sekha.dev)
-- **Website:** [sekha.dev/licensing](https://sekha.dev/licensing)
+**Usage-Based, Not Per-Seat** - Fair pricing that scales with your actual usage:
 
-### Commercial License Benefits
+| Tier | Organization Size | Annual Price | Included API Calls | Overage Cost |
+|------|------------------|--------------|-------------------|-------------|
+| **Startup** | 51-200 employees | $5,000/year | 10 million/year | $0.001/call |
+| **Business** | 201-1,000 employees | $25,000/year | 100 million/year | $0.0005/call |
+| **Enterprise** | 1,000+ employees | $100,000/year | 500 million/year | $0.0002/call |
+| **AI Vendor** | LLM providers | Custom pricing | Unlimited | Revenue share |
 
-✅ **Use Sekha in closed-source products** - No obligation to disclose your source code  
-✅ **Offer Sekha as a service** - Build SaaS products on top of Sekha  
-✅ **Keep modifications private** - Your changes remain proprietary  
-✅ **Dedicated support** - Priority email/Slack support  
-✅ **Custom feature development** - We can build features for your use case  
-✅ **Legal protection** - Indemnification and warranty coverage  
-✅ **Influence roadmap** - Input on future development priorities  
+!!! info "Why Usage-Based?"
+    We believe in fair pricing. You shouldn't pay per seat when only 20% of your organization uses Sekha. You pay for what you actually use.
 
-### Pricing
+### What You Get
 
-Commercial licensing is priced based on:
+**Legal Certainty:**
 
-- **Team size** - Number of developers/users
-- **Deployment scale** - Self-hosted vs. SaaS, traffic volume
-- **Support level** - Standard vs. enterprise support
-- **Feature requirements** - Custom development needs
+- ✅ Perpetual commercial use rights
+- ✅ No copyleft obligations
+- ✅ No source code publication requirements
+- ✅ Legal indemnification
+- ✅ Patent grant
 
-**Contact us for a quote:** [licensing@sekha.dev](mailto:licensing@sekha.dev)
+**Enterprise Features:**
 
----
+- ✅ Priority support (SLA-backed)
+- ✅ Security patches & updates
+- ✅ Architecture consultation
+- ✅ Custom feature development (Enterprise tier)
+- ✅ On-premise deployment assistance
+- ✅ Compliance documentation (HIPAA, SOC2, ISO 27001)
 
-## Why Dual Licensing?
+**Deployment Flexibility:**
 
-### Sustaining Open Source Development
-
-Sekha is a complex, production-grade system that requires ongoing development, maintenance, and support. The dual license model allows us to:
-
-1. **Keep the core open source** - Individual developers, researchers, and students can use Sekha freely
-2. **Fund development** - Commercial licenses provide revenue to sustain full-time development
-3. **Prevent exploitation** - Companies using Sekha to generate revenue should contribute back financially or via code
-4. **Ensure quality** - Commercial support contracts fund testing, security audits, and documentation
-
-### Fair Use Examples
-
-✅ **Free (AGPL-3.0):**
-
-- Personal AI assistant for your own use
-- University research project studying AI memory
-- Open-source chatbot framework (also licensed under AGPL)
-- Internal company tool with source code disclosed to employees
-- Non-profit organization managing volunteer knowledge
-
-❌ **Requires Commercial License:**
-
-- SaaS product: "AI Memory as a Service" (paid subscriptions)
-- Enterprise software with Sekha embedded (closed-source)
-- Consulting firm deploying Sekha for clients (without code disclosure)
-- Mobile app using Sekha backend (sold on app stores)
-- Startup building a proprietary AI platform with Sekha
+- Self-hosted on your infrastructure
+- Managed cloud deployment
+- Hybrid deployments
+- Air-gapped environments
 
 ---
 
 ## Frequently Asked Questions
 
-### Can I use Sekha at my company?
+### Do I need a license for internal use?
 
-**Yes**, if:
+**No, if you're under 50 employees.** AGPL-3.0 allows internal use without distribution requirements.
 
-- It's for **internal use only** (not customer-facing)
-- You disclose the source code (including modifications) to your employees
-- Your company is non-profit or educational
+**Yes, if you're 50+ employees.** Commercial license provides legal clarity for enterprise use.
 
-**No (requires commercial license)**, if:
+### What counts as "distribution"?
 
-- You're building a **product or service** for customers
-- You want to keep your modifications **private**
-- You're offering Sekha as a **paid service**
+ Under AGPL-3.0, **network use counts as distribution**. If external users access your Sekha deployment:
 
----
+- ✅ **Internal-only:** Your employees use Sekha → No distribution
+- ⚠️ **External SaaS:** Customers use your Sekha-powered service → Distribution
+- ⚠️ **API access:** Third parties call your modified Sekha API → Distribution
 
-### Can I contribute to Sekha?
+If you distribute, you must publish your modifications under AGPL-3.0.
 
-**Absolutely!** We welcome contributions.
+### Can I build a SaaS product with Sekha?
 
-By contributing, you agree to:
+**Yes, in two ways:**
 
-- License your contributions under AGPL-3.0
-- Grant Sekha AI the right to relicense your contributions under commercial licenses (dual licensing)
+1. **Open-Source SaaS:** Publish your modifications under AGPL-3.0 (free)
+2. **Closed-Source SaaS:** Get a commercial license (paid)
 
-This ensures we can continue offering both open-source and commercial options.
+### What if I exceed my API call limit?
 
-See [CONTRIBUTING.md](https://github.com/sekha-ai/sekha-controller/blob/main/CONTRIBUTING.md) for details.
+Overages are charged automatically at the published per-call rate. No surprises—you'll receive monthly usage reports.
 
----
+### Can I switch from AGPL to Commercial later?
 
-### Can I fork Sekha and create a proprietary version?
+**Yes!** Contact us anytime. We'll backdate the license to your first deployment date (no retroactive fees for internal use).
 
-**No**, not without a commercial license.
+### Do you offer startup discounts?
 
-Under AGPL-3.0, any fork or derivative work must also be licensed under AGPL-3.0, meaning:
+Yes. Startups under 2 years old with <$1M revenue qualify for 50% off the first year.
 
-- You must disclose your source code
-- If you run it on a server, users must have access to the source
-- You cannot sell it as closed-source software
+### What about government/education/non-profit use?
 
-If you want to create a proprietary version, contact us for a commercial license.
+**Educational institutions and non-profits:** Free under AGPL-3.0, regardless of size.
+
+**Government agencies:** Contact us for public sector pricing.
 
 ---
 
-### What about the SDKs and MCP server?
+## Revenue Allocation
 
-All Sekha components follow the same dual license:
+We're committed to transparency. Here's how commercial license revenue is used:
 
-- **sekha-controller** (Rust core): AGPL-3.0 / Commercial
-- **sekha-llm-bridge** (Python LLM ops): AGPL-3.0 / Commercial
-- **sekha-python-sdk**: AGPL-3.0 / Commercial
-- **sekha-js-sdk**: AGPL-3.0 / Commercial
-- **sekha-mcp**: AGPL-3.0 / Commercial
-- **sekha-vscode**: AGPL-3.0 / Commercial
-- **sekha-cli**: AGPL-3.0 / Commercial
+- **50%** - Core development team (hire full-time maintainers)
+- **25%** - Community grants (contributor bounties, open-source sponsorships)
+- **15%** - Infrastructure (CI/CD, hosting, testing, documentation)
+- **10%** - Legal & governance (trademark protection, compliance audits)
 
-If you need a commercial license for the controller, it covers all ecosystem components.
+All financials are published quarterly via [Open Collective](https://opencollective.com/sekha).
 
 ---
 
-### How does AGPL differ from MIT or Apache licenses?
+## Alternative Funding
 
-**MIT/Apache** (permissive):
+We also accept:
 
-- ✅ Use in closed-source products without disclosure
-- ✅ No requirement to contribute back
-- ❌ No protection against proprietary forks
-
-**AGPL-3.0** (copyleft):
-
-- ❌ Cannot use in closed-source products (without commercial license)
-- ✅ Ensures improvements benefit the community
-- ✅ **Network copyleft** - Even SaaS usage requires source disclosure
-
-**Why we chose AGPL:**
-
-We want individuals and researchers to use Sekha freely, while ensuring companies that profit from Sekha either:
-
-1. Contribute back to open source (via code disclosure), OR
-2. Support development financially (via commercial license)
+- **GitHub Sponsors:** Individual donations
+- **Open Collective:** Transparent community funding
+- **Corporate Sponsorships:** Logo placement, prioritized feature requests
+- **Grants:** Mozilla, NLNet, GitHub Accelerator, university research grants
 
 ---
 
-### Can I use Sekha in a GPLv3 project?
+## How to Get a Commercial License
 
-**Yes!** AGPL-3.0 is compatible with GPLv3.
+### Step 1: Contact Sales
 
-Your project must be licensed under GPLv3 or AGPL-3.0, and you must comply with both licenses' requirements.
+Email: [hello@sekha.dev](mailto:hello@sekha.dev)
 
----
+Include:
 
-### Can I use Sekha in an MIT-licensed project?
+- Company name and size (employee count)
+- Expected usage (API calls/month estimate)
+- Deployment model (cloud, on-premise, hybrid)
+- Timeline for production use
 
-**No**, not for the combined work.
+### Step 2: License Agreement
 
-AGPL-3.0 is **not compatible** with permissive licenses like MIT or Apache when you distribute the combined work. The entire project would need to be under AGPL-3.0.
+We'll send a standard enterprise license agreement. Legal review typically takes 1-2 weeks.
 
-**Alternative:** Get a commercial license, which allows integration with MIT/Apache projects without AGPL obligations.
+### Step 3: License Key
 
----
+Upon agreement signature, you'll receive:
 
-### What if I'm a startup or indie developer?
+- Enterprise license key (JWT format)
+- Support portal access
+- Architecture consultation session
 
-We offer **discounted commercial licenses** for:
+### Step 4: Deployment
 
-- 🌱 **Startups** (<10 employees, <$1M revenue)
-- 👤 **Indie developers** (solo founders, side projects)
-- 🎓 **Educational institutions** (universities, boot camps)
+Add your license key to `config.toml`:
 
-Contact us: [licensing@sekha.dev](mailto:licensing@sekha.dev)
-
----
-
-### Can I self-host Sekha without a commercial license?
-
-**Yes**, as long as:
-
-- It's for **personal or internal use**
-- You're not offering it as a **paid service** to others
-- If modified, you provide source access to users (AGPL requirement)
-
-**Example allowed:** Running Sekha on your own server for your personal AI assistant  
-**Example not allowed:** Offering "Sekha Hosting as a Service" to customers (requires commercial license)
-
----
-
-## License Text
-
-### AGPL-3.0 Full Text
-
-The complete AGPL-3.0 license text is available at:
-
-- **Official AGPL-3.0:** [https://www.gnu.org/licenses/agpl-3.0.en.html](https://www.gnu.org/licenses/agpl-3.0.en.html)
-- **Sekha LICENSE file:** [https://github.com/sekha-ai/sekha-controller/blob/main/LICENSE](https://github.com/sekha-ai/sekha-controller/blob/main/LICENSE)
-
-### Copyright Notice
-
-```
-Copyright (c) 2025-2026 Sekha AI Project
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
+```toml
+[license]
+key = "sekha_enterprise_your-key-here"
 ```
 
----
-
-## Contact
-
-**Licensing Questions:**  
-[licensing@sekha.dev](mailto:licensing@sekha.dev)
-
-**General Inquiries:**  
-[hello@sekha.dev](mailto:hello@sekha.dev)
-
-**Website:**  
-[sekha.dev](https://sekha.dev)
+The controller validates the key and unlocks enterprise features.
 
 ---
 
-## Summary
+## Enforcement
 
-| Use Case | License Required |
-|----------|------------------|
-| Personal AI assistant | AGPL-3.0 (free) |
-| Academic research | AGPL-3.0 (free) |
-| Open-source project (AGPL) | AGPL-3.0 (free) |
-| Internal company tool (source disclosed) | AGPL-3.0 (free) |
-| SaaS product for customers | **Commercial** |
-| Closed-source commercial software | **Commercial** |
-| Consulting/agency deploying for clients | **Commercial** |
-| Mobile/desktop app (paid) | **Commercial** |
+### AGPL Enforcement
 
-**When in doubt:** Contact us at [licensing@sekha.dev](mailto:licensing@sekha.dev) - we're happy to help clarify your use case!
+We use standard DMCA takedowns for AGPL violations:
+
+1. Detect violation (non-compliance, closed-source distribution)
+2. Request compliance (15-day cure period)
+3. Legal action if necessary
+
+### Commercial License Enforcement
+
+**Audit Rights:** Enterprise tier customers grant annual audit rights to verify usage.
+
+**Grace Period:** 30 days to purchase a license if accidental non-compliance is discovered.
+
+**Good Faith:** We work with companies to resolve licensing issues fairly.
+
+---
+
+## Open Source Philosophy
+
+We believe:
+
+- **Your data is your intellectual property** - No vendor should own your AI memories
+- **Open source drives innovation** - The best ideas come from collaborative development
+- **Sustainable funding enables quality** - Commercial licenses fund long-term maintenance
+- **Fairness matters** - Small users shouldn't subsidize large enterprises
+
+---
+
+## Questions?
+
+Email: [hello@sekha.dev](mailto:hello@sekha.dev)  
+License FAQ: [https://docs.sekha.dev/troubleshooting/faq](../troubleshooting/faq.md)  
+Community: [Discord](https://discord.gg/sekha)
+
+---
+
+<div class="license-badges">
+  <img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="AGPL-3.0">
+  <img src="https://img.shields.io/badge/Commercial-Available-green.svg" alt="Commercial License Available">
+</div>
+
+*Last updated: January 2026*

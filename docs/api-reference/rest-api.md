@@ -1,65 +1,121 @@
 # REST API Reference
 
-Sekha Controller provides a comprehensive REST API for managing AI memory. All endpoints require authentication via Bearer token.
+## Overview
+
+The Sekha Controller exposes a RESTful API for all memory operations. All endpoints return JSON and use standard HTTP status codes.
+
+**Base URL:** `http://localhost:8080/api/v1` (default local deployment)
+
+**Authentication:** Bearer token in Authorization header
+
+**API Version:** v1 (current)
+
+---
 
 ## Authentication
 
-Include your API key in the `Authorization` header:
+All API requests require authentication via Bearer token:
 
 ```bash
 Authorization: Bearer your-api-key-here
 ```
 
-Get your API key from `~/.sekha/config.toml` (look for `api_key` under `[server]`).
+**Configure your API key** in `~/.sekha/config.toml`:
 
-!!! warning "Production Security"
-    Change the default API key before deploying to production. Use a random 32+ character string.
-
----
-
-## Base URL
-
-```
-http://localhost:8080/api/v1
+```toml
+[server]
+api_key = "your-production-api-key-min-32-chars-long"
 ```
 
-For production, replace `localhost` with your server's hostname.
+!!! warning "Security"
+    The default key `dev-key-replace-in-production` is for development only. Always use a secure random key (32+ characters) in production.
+
+**Generate a secure key:**
+
+```bash
+openssl rand -base64 32
+```
 
 ---
 
-## Endpoints Overview
+## Rate Limiting
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/conversations` | Store a new conversation |
-| `GET` | `/conversations/:id` | Get a specific conversation |
-| `PUT` | `/conversations/:id` | Update conversation metadata |
-| `DELETE` | `/conversations/:id` | Delete a conversation |
-| `POST` | `/query` | Semantic search across conversations |
-| `POST` | `/search/fts` | Full-text keyword search |
-| `POST` | `/context/assemble` | Build LLM context from memory |
-| `POST` | `/labels/suggest` | Get AI-powered label suggestions |
-| `PUT` | `/conversations/:id/label` | Update label and folder |
-| `PUT` | `/conversations/:id/pin` | Pin conversation (prevent pruning) |
-| `PUT` | `/conversations/:id/archive` | Archive conversation |
-| `POST` | `/summarize` | Generate hierarchical summary |
-| `POST` | `/prune/dry-run` | Get pruning recommendations |
-| `POST` | `/prune/execute` | Execute pruning |
-| `GET` | `/stats` | Get memory statistics |
-| `POST` | `/export` | Export conversations |
-| `GET` | `/health` | Health check |
+**Default Limits:**
+
+- 100 requests/second
+- 200 burst capacity
+
+Configurable in `config.toml`:
+
+```toml
+[rate_limiting]
+requests_per_second = 100
+burst_size = 200
+```
+
+**Rate Limit Headers:**
+
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1642533600
+```
 
 ---
 
-## Conversation Management
+## Common Response Codes
 
-### Store a Conversation
+| Code | Meaning | Description |
+|------|---------|-------------|
+| `200` | OK | Request successful |
+| `201` | Created | Resource created successfully |
+| `400` | Bad Request | Invalid request parameters |
+| `401` | Unauthorized | Missing or invalid API key |
+| `404` | Not Found | Resource not found |
+| `429` | Too Many Requests | Rate limit exceeded |
+| `500` | Internal Server Error | Server error (check logs) |
 
-Store a new conversation with messages.
+---
 
-**Endpoint:** `POST /api/v1/conversations`
+## Endpoints
 
-**Request:**
+### Health Check
+
+#### `GET /health`
+
+Check if the Sekha Controller is running and healthy.
+
+**Authentication:** Not required
+
+**Response:**
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-01-25T20:00:00Z",
+  "checks": {
+    "database": {"status": "ok"},
+    "chroma": {"status": "ok"},
+    "llm_bridge": {"status": "ok"}
+  }
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/health
+```
+
+---
+
+### Conversations
+
+#### `POST /api/v1/conversations`
+
+Store a new conversation in Sekha memory.
+
+**Request Body:**
 
 ```json
 {
@@ -68,22 +124,34 @@ Store a new conversation with messages.
   "messages": [
     {
       "role": "user",
-      "content": "We need to build a new API endpoint"
+      "content": "We need to build a new API endpoint for user authentication"
     },
     {
       "role": "assistant",
-      "content": "I recommend starting with the following architecture..."
+      "content": "I recommend starting with OAuth 2.0. Here's the architecture..."
     }
   ],
-  "importance_score": 8,
+  "importance": 7,
   "metadata": {
-    "project": "SecureAPI",
+    "project": "auth-service",
     "sprint": "2026-Q1"
   }
 }
 ```
 
-**Response:**
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `label` | string | Yes | Human-readable conversation label |
+| `folder` | string | No | Hierarchical folder path (e.g., `/work/project`) |
+| `messages` | array | Yes | Array of message objects |
+| `messages[].role` | string | Yes | `user` or `assistant` |
+| `messages[].content` | string | Yes | Message text content |
+| `importance` | integer | No | 1-10 scale (default: 5) |
+| `metadata` | object | No | Custom key-value metadata |
+
+**Response (201 Created):**
 
 ```json
 {
@@ -92,21 +160,39 @@ Store a new conversation with messages.
   "label": "Project Planning",
   "folder": "/work/new-feature",
   "status": "active",
-  "importance_score": 8,
+  "importance": 7,
   "message_count": 2,
   "word_count": 45,
-  "created_at": "2026-01-25T16:30:00Z",
-  "updated_at": "2026-01-25T16:30:00Z"
+  "created_at": "2026-01-25T20:00:00Z",
+  "updated_at": "2026-01-25T20:00:00Z"
 }
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/v1/conversations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key" \
+  -d '{
+    "label": "Project Planning",
+    "folder": "/work/new-feature",
+    "messages": [
+      {"role": "user", "content": "We need to build a new API endpoint"},
+      {"role": "assistant", "content": "I recommend starting with..."}
+    ]
+  }'
 ```
 
 ---
 
-### Get a Conversation
+#### `GET /api/v1/conversations/{id}`
 
-Retrieve a specific conversation with all messages.
+Retrieve a specific conversation by ID.
 
-**Endpoint:** `GET /api/v1/conversations/:id`
+**Path Parameters:**
+
+- `id` - Conversation UUID
 
 **Response:**
 
@@ -116,81 +202,146 @@ Retrieve a specific conversation with all messages.
   "label": "Project Planning",
   "folder": "/work/new-feature",
   "status": "active",
-  "importance_score": 8,
+  "importance": 7,
   "messages": [
     {
       "role": "user",
       "content": "We need to build a new API endpoint",
-      "timestamp": "2026-01-25T16:30:00Z"
+      "timestamp": "2026-01-25T20:00:00Z"
     },
     {
       "role": "assistant",
-      "content": "I recommend starting with the following architecture...",
-      "timestamp": "2026-01-25T16:30:01Z"
+      "content": "I recommend starting with...",
+      "timestamp": "2026-01-25T20:00:05Z"
     }
   ],
-  "message_count": 2,
-  "word_count": 45,
-  "created_at": "2026-01-25T16:30:00Z",
-  "updated_at": "2026-01-25T16:30:00Z"
+  "metadata": {"project": "auth-service"},
+  "created_at": "2026-01-25T20:00:00Z",
+  "updated_at": "2026-01-25T20:00:00Z"
 }
+```
+
+**Example:**
+
+```bash
+curl -H "Authorization: Bearer your-api-key" \
+  http://localhost:8080/api/v1/conversations/123e4567-e89b-12d3-a456-426614174000
 ```
 
 ---
 
-### Update Conversation Metadata
+#### `PUT /api/v1/conversations/{id}/label`
 
-Update label, folder, importance score, or status.
+Update conversation label and/or folder.
 
-**Endpoint:** `PUT /api/v1/conversations/:id`
-
-**Request:**
+**Request Body:**
 
 ```json
 {
   "label": "Completed Feature",
-  "folder": "/work/archive",
-  "importance_score": 9,
-  "status": "archived"
+  "folder": "/work/archive/2026"
 }
 ```
 
-**Response:** Same as GET conversation
+**Response (200 OK):**
+
+```json
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "label": "Completed Feature",
+  "folder": "/work/archive/2026",
+  "updated_at": "2026-01-25T20:30:00Z"
+}
+```
 
 ---
 
-### Delete a Conversation
+#### `PUT /api/v1/conversations/{id}/importance`
 
-Permanently delete a conversation and all its messages.
+Update conversation importance score (1-10).
 
-**Endpoint:** `DELETE /api/v1/conversations/:id`
+**Request Body:**
 
-**Response:** `204 No Content`
+```json
+{
+  "importance": 9
+}
+```
+
+---
+
+#### `PUT /api/v1/conversations/{id}/pin`
+
+Pin a conversation (sets importance to 10).
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "importance": 10,
+  "pinned": true
+}
+```
+
+---
+
+#### `PUT /api/v1/conversations/{id}/archive`
+
+Archive a conversation (sets status to `archived`).
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "status": "archived",
+  "archived_at": "2026-01-25T20:30:00Z"
+}
+```
+
+---
+
+#### `DELETE /api/v1/conversations/{id}`
+
+Permanently delete a conversation.
 
 !!! danger "Permanent Deletion"
-    This cannot be undone. Consider archiving instead.
+    This operation cannot be undone. Consider archiving instead.
+
+**Response (204 No Content)**
 
 ---
 
-## Search & Retrieval
+### Search & Query
 
-### Semantic Search
+#### `POST /api/v1/query`
 
-Search conversations using natural language and semantic similarity.
+Semantic search across all conversations using vector similarity.
 
-**Endpoint:** `POST /api/v1/query`
-
-**Request:**
+**Request Body:**
 
 ```json
 {
   "query": "What did we discuss about API design?",
   "limit": 10,
-  "filter_labels": ["Engineering", "Architecture"],
-  "filter_folder": "/work",
-  "min_importance": 5.0
+  "filters": {
+    "folder": "/work",
+    "min_importance": 5,
+    "status": "active"
+  }
 }
 ```
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `query` | string | Yes | Natural language search query |
+| `limit` | integer | No | Max results (default: 10, max: 100) |
+| `filters.folder` | string | No | Filter by folder path |
+| `filters.min_importance` | integer | No | Minimum importance score |
+| `filters.status` | string | No | `active` or `archived` |
 
 **Response:**
 
@@ -198,135 +349,131 @@ Search conversations using natural language and semantic similarity.
 {
   "results": [
     {
-      "id": "msg-uuid",
-      "conversation_id": "conv-uuid",
-      "label": "API Design Discussion",
-      "content": "We should use RESTful principles...",
-      "similarity": 0.92,
-      "importance_score": 8,
-      "created_at": "2026-01-20T10:00:00Z"
+      "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+      "label": "Project Planning",
+      "folder": "/work/new-feature",
+      "relevance_score": 0.92,
+      "matched_content": "I recommend starting with OAuth 2.0...",
+      "created_at": "2026-01-25T20:00:00Z"
     }
   ],
-  "total": 25,
+  "total": 15,
   "query_time_ms": 45
 }
 ```
 
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/v1/query \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key" \
+  -d '{
+    "query": "API design patterns",
+    "limit": 5
+  }'
+```
+
 ---
 
-### Full-Text Search
+#### `POST /api/v1/search/fts`
 
-Search for exact keywords using SQLite FTS5.
+Full-text keyword search using SQLite FTS5.
 
-**Endpoint:** `POST /api/v1/search/fts`
-
-**Request:**
+**Request Body:**
 
 ```json
 {
-  "query": "API endpoint",
-  "limit": 20,
-  "folder": "/work"
+  "query": "OAuth authentication",
+  "limit": 10
 }
 ```
 
-**Response:** Same structure as semantic search
+**Response:** Same format as semantic query
+
+**Difference from Semantic Query:**
+
+- **Semantic (`/query`)**: Finds similar meanings ("authentication" matches "login", "sign-in")
+- **Full-text (`/search/fts`)**: Exact keyword matching
 
 ---
 
-## Context Assembly
+### Context Assembly
 
-### Assemble Context for LLM
+#### `POST /api/v1/context/assemble`
 
-Build optimized context within a token budget, prioritizing semantic relevance, recency, and importance.
+Build optimal context for an LLM prompt by intelligently selecting relevant past conversations.
 
-**Endpoint:** `POST /api/v1/context/assemble`
-
-**Request:**
+**Request Body:**
 
 ```json
 {
-  "query": "Continue working on the authentication system",
+  "query": "Continue working on the authentication feature",
   "context_budget": 8000,
-  "preferred_labels": ["Authentication", "Security"],
-  "preferred_folder": "/work",
-  "include_recent_days": 7,
-  "min_importance": 6.0
+  "preferred_labels": ["Project Planning", "Technical Design"],
+  "recency_weight": 0.3,
+  "relevance_weight": 0.5,
+  "importance_weight": 0.2
 }
 ```
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `query` | string | Yes | User's next prompt/question |
+| `context_budget` | integer | No | Max tokens to include (default: 4000) |
+| `preferred_labels` | array | No | Prioritize these labels |
+| `recency_weight` | float | No | Weight for recent messages (0-1) |
+| `relevance_weight` | float | No | Weight for semantic similarity (0-1) |
+| `importance_weight` | float | No | Weight for importance score (0-1) |
+
+!!! tip "Weights"
+    Weights must sum to 1.0. Default: `{recency: 0.3, relevance: 0.5, importance: 0.2}`
 
 **Response:**
 
 ```json
 {
-  "formatted_context": "# Recent Relevant Conversations\n\n## Authentication System [2026-01-20]\n...",
-  "selected_conversations": [
+  "context": [
     {
-      "id": "conv-uuid",
-      "label": "Auth Architecture",
-      "excerpt": "We decided to use OAuth 2.0 with...",
-      "relevance_score": 0.95,
-      "token_count": 1200
+      "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+      "label": "Project Planning",
+      "messages": [
+        {"role": "user", "content": "..."},
+        {"role": "assistant", "content": "..."}
+      ],
+      "score": 0.87,
+      "token_count": 250
     }
   ],
-  "estimated_tokens": 7800,
-  "conversations_considered": 150,
-  "conversations_selected": 5
+  "total_tokens": 3450,
+  "budget_used": 0.86,
+  "conversations_included": 5
 }
+```
+
+**Use this context** in your LLM prompt:
+
+```python
+context_data = response['context']
+prompt = build_prompt(context_data, user_query)
+llm_response = call_llm(prompt)
 ```
 
 ---
 
-## Organization
+### Labels & Organization
 
-### Update Label and Folder
+#### `POST /api/v1/labels/suggest`
 
-**Endpoint:** `PUT /api/v1/conversations/:id/label`
+Get AI-powered label suggestions for a conversation.
 
-**Request:**
-
-```json
-{
-  "label": "New Label",
-  "folder": "/new/path"
-}
-```
-
----
-
-### Pin a Conversation
-
-Prevent conversation from being auto-pruned.
-
-**Endpoint:** `PUT /api/v1/conversations/:id/pin`
-
-**Response:** `200 OK`
-
----
-
-### Archive a Conversation
-
-Mark conversation as archived (hidden from active search).
-
-**Endpoint:** `PUT /api/v1/conversations/:id/archive`
-
-**Response:** `200 OK`
-
----
-
-## AI-Powered Features
-
-### Suggest Labels
-
-Get AI-generated label suggestions based on conversation content.
-
-**Endpoint:** `POST /api/v1/labels/suggest`
-
-**Request:**
+**Request Body:**
 
 ```json
 {
-  "conversation_id": "conv-uuid"
+  "conversation_id": "123e4567-e89b-12d3-a456-426614174000"
 }
 ```
 
@@ -335,69 +482,89 @@ Get AI-generated label suggestions based on conversation content.
 ```json
 {
   "suggestions": [
-    {
-      "label": "API Design",
-      "confidence": 0.92,
-      "reason": "Conversation focuses on REST API architecture and best practices"
-    },
-    {
-      "label": "Engineering/Backend",
-      "confidence": 0.85,
-      "reason": "Technical discussion about server-side implementation"
-    }
+    {"label": "OAuth Implementation", "confidence": 0.92},
+    {"label": "API Security", "confidence": 0.85},
+    {"label": "Backend Development", "confidence": 0.78}
+  ],
+  "recommended_folder": "/work/auth-service"
+}
+```
+
+---
+
+#### `GET /api/v1/labels`
+
+List all labels in use.
+
+**Response:**
+
+```json
+{
+  "labels": [
+    {"label": "Project Planning", "count": 15},
+    {"label": "Technical Design", "count": 8},
+    {"label": "Code Review", "count": 22}
   ]
 }
 ```
 
 ---
 
-### Generate Summary
+### Summarization
 
-Create hierarchical summaries (daily/weekly/monthly).
+#### `POST /api/v1/summarize`
 
-**Endpoint:** `POST /api/v1/summarize`
+Generate hierarchical summaries of conversations.
 
-**Request:**
+**Request Body:**
 
 ```json
 {
-  "conversation_id": "conv-uuid",
-  "level": "weekly"
+  "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+  "level": "daily"
 }
 ```
 
 **Levels:**
-- `daily` - Single day summary
-- `weekly` - 7-day digest
-- `monthly` - 30-day report
+
+- `daily` - Summarize single conversation
+- `weekly` - Summarize week's conversations
+- `monthly` - Summarize month's conversations
 
 **Response:**
 
 ```json
 {
-  "summary": "This week focused on API design decisions. Key outcomes: ...",
-  "key_topics": ["REST API", "Authentication", "Rate Limiting"],
-  "messages_summarized": 45,
-  "compression_ratio": 0.15
+  "summary": "Discussed implementing OAuth 2.0 for authentication. Key decisions: use JWT tokens, implement refresh tokens, add rate limiting. Next steps: design database schema, set up Redis for token storage.",
+  "key_points": [
+    "OAuth 2.0 chosen for authentication",
+    "JWT tokens for stateless auth",
+    "Redis for token storage"
+  ],
+  "action_items": [
+    "Design database schema",
+    "Set up Redis instance"
+  ],
+  "summary_tokens": 85,
+  "original_tokens": 3400,
+  "compression_ratio": 0.025
 }
 ```
 
 ---
 
-## Memory Management
+### Pruning
 
-### Pruning Recommendations
+#### `POST /api/v1/prune/dry-run`
 
-Get suggestions for conversations to prune based on age and importance.
+Get recommendations for pruning old/low-value conversations (does not delete).
 
-**Endpoint:** `POST /api/v1/prune/dry-run`
-
-**Request:**
+**Request Body:**
 
 ```json
 {
   "threshold_days": 90,
-  "importance_threshold": 5.0
+  "min_importance": 3
 }
 ```
 
@@ -407,198 +574,199 @@ Get suggestions for conversations to prune based on age and importance.
 {
   "candidates": [
     {
-      "id": "conv-uuid",
-      "label": "Old Discussion",
+      "conversation_id": "...",
+      "label": "Random Chat",
+      "importance": 2,
       "age_days": 120,
-      "importance_score": 3,
-      "reason": "Low importance, no recent activity",
-      "last_accessed": "2025-10-15T10:00:00Z"
+      "reason": "Low importance, not accessed in 90+ days"
     }
   ],
   "total_candidates": 15,
-  "estimated_space_saved_mb": 45.2
+  "potential_space_saved_mb": 45
 }
 ```
 
 ---
 
-### Execute Pruning
+#### `POST /api/v1/prune/execute`
 
-**Endpoint:** `POST /api/v1/prune/execute`
+Execute pruning based on recommendations.
 
-**Request:** Same as dry-run
+!!! warning "Permanent Action"
+    This archives conversations. They can be restored from archives.
+
+**Request Body:**
+
+```json
+{
+  "conversation_ids": ["uuid1", "uuid2", "uuid3"]
+}
+```
 
 **Response:**
 
 ```json
 {
-  "pruned_count": 15,
-  "space_freed_mb": 45.2,
-  "pruned_ids": ["conv-uuid-1", "conv-uuid-2"]
+  "archived": 3,
+  "space_freed_mb": 12
 }
 ```
 
 ---
 
-## Analytics
+### Statistics
 
-### Memory Statistics
+#### `GET /api/v1/stats`
 
-Get insights about your memory usage.
-
-**Endpoint:** `GET /api/v1/stats`
+Get usage statistics.
 
 **Response:**
 
 ```json
 {
-  "total_conversations": 1234,
-  "total_messages": 45678,
-  "total_words": 1234567,
-  "average_importance": 6.5,
-  "folders": {
-    "/work": 800,
-    "/personal": 300,
-    "/research": 134
-  },
-  "labels": {
-    "Engineering": 450,
-    "AI": 200,
-    "Personal": 300
-  },
-  "status_breakdown": {
-    "active": 1000,
-    "archived": 200,
-    "pinned": 34
-  },
-  "storage_size_mb": 450.5,
-  "oldest_conversation": "2025-06-01T10:00:00Z",
-  "newest_conversation": "2026-01-25T16:30:00Z"
+  "total_conversations": 1543,
+  "active_conversations": 1402,
+  "archived_conversations": 141,
+  "total_messages": 45230,
+  "total_tokens": 12500000,
+  "storage_mb": 234,
+  "labels": 45,
+  "folders": 12,
+  "oldest_conversation": "2025-06-15T10:00:00Z",
+  "newest_conversation": "2026-01-25T20:00:00Z"
 }
 ```
 
 ---
 
-## Export
+### Export
 
-### Export Conversations
+#### `POST /api/v1/export`
 
-Export to JSON or Markdown format.
+Export conversations in various formats.
 
-**Endpoint:** `POST /api/v1/export`
-
-**Request:**
+**Request Body:**
 
 ```json
 {
-  "format": "markdown",
-  "filter_folder": "/work",
-  "filter_labels": ["Important"],
-  "include_metadata": true
-}
-```
-
-**Response:** File download with appropriate Content-Type
-
----
-
-## System
-
-### Health Check
-
-**Endpoint:** `GET /health`
-
-**Response:**
-
-```json
-{
-  "status": "healthy",
-  "timestamp": "2026-01-25T16:30:00Z",
-  "version": "0.1.0",
-  "checks": {
-    "database": {"status": "ok", "response_time_ms": 2},
-    "chroma": {"status": "ok", "response_time_ms": 15},
-    "ollama": {"status": "ok", "response_time_ms": 100}
-  },
-  "uptime_seconds": 86400
-}
-```
-
----
-
-## Error Responses
-
-All errors follow this format:
-
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid request parameters",
-    "details": {
-      "field": "importance_score",
-      "issue": "Must be between 0.0 and 10.0"
-    }
+  "format": "json",
+  "filters": {
+    "folder": "/work",
+    "start_date": "2026-01-01",
+    "end_date": "2026-01-31"
   }
 }
 ```
 
-### Common Error Codes
+**Formats:**
 
-| HTTP | Code | Description |
-|------|------|-------------|
-| `400` | `VALIDATION_ERROR` | Invalid request parameters |
-| `401` | `UNAUTHORIZED` | Missing or invalid API key |
-| `404` | `NOT_FOUND` | Resource not found |
-| `409` | `CONFLICT` | Resource already exists |
-| `429` | `RATE_LIMIT_EXCEEDED` | Too many requests |
-| `500` | `INTERNAL_ERROR` | Server error |
-| `503` | `SERVICE_UNAVAILABLE` | Dependency (Chroma/Ollama) unavailable |
+- `json` - JSON export
+- `markdown` - Markdown files
+- `csv` - CSV (metadata only)
+
+**Response:** Returns download URL or direct file
 
 ---
 
-## Rate Limiting
+## Interactive API Explorer
 
-Default limits:
-- **100 requests/second** per IP
-- **200 burst** capacity
+**Swagger UI** is available when running Sekha locally:
 
-Configure in `config.toml`:
+**URL:** [http://localhost:8080/swagger-ui/](http://localhost:8080/swagger-ui/)
 
-```toml
-[rate_limiting]
-requests_per_second = 100
-burst_size = 200
-```
+**Features:**
 
-Rate limit headers:
-
-```
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 85
-X-RateLimit-Reset: 1706198430
-```
-
----
-
-## Interactive Documentation
-
-When Sekha is running, visit:
-
-```
-http://localhost:8080/swagger-ui/
-```
-
-For interactive API exploration with:
+- Interactive endpoint testing
 - Request/response examples
-- "Try it out" functionality
-- Full schema documentation
+- Schema validation
+- Authentication configuration
+
+---
+
+## Code Examples
+
+### Python
+
+```python
+import requests
+
+BASE_URL = "http://localhost:8080/api/v1"
+HEADERS = {"Authorization": "Bearer your-api-key"}
+
+# Store a conversation
+response = requests.post(
+    f"{BASE_URL}/conversations",
+    headers=HEADERS,
+    json={
+        "label": "Planning Session",
+        "messages": [
+            {"role": "user", "content": "Let's plan the new feature"},
+            {"role": "assistant", "content": "Great! Here's what I recommend..."}
+        ]
+    }
+)
+conversation_id = response.json()["id"]
+
+# Query memory
+results = requests.post(
+    f"{BASE_URL}/query",
+    headers=HEADERS,
+    json={"query": "feature planning", "limit": 5}
+)
+print(results.json())
+```
+
+### JavaScript
+
+```javascript
+const BASE_URL = 'http://localhost:8080/api/v1';
+const HEADERS = {
+  'Authorization': 'Bearer your-api-key',
+  'Content-Type': 'application/json'
+};
+
+// Store a conversation
+const response = await fetch(`${BASE_URL}/conversations`, {
+  method: 'POST',
+  headers: HEADERS,
+  body: JSON.stringify({
+    label: 'Planning Session',
+    messages: [
+      {role: 'user', content: 'Let\'s plan the new feature'},
+      {role: 'assistant', content: 'Great! Here\'s what I recommend...'}
+    ]
+  })
+});
+
+const {id} = await response.json();
+console.log('Conversation ID:', id);
+```
+
+### cURL
+
+```bash
+# Store conversation
+curl -X POST http://localhost:8080/api/v1/conversations \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"label": "Test", "messages": [{"role": "user", "content": "Hello"}]}'
+
+# Query memory
+curl -X POST http://localhost:8080/api/v1/query \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "hello", "limit": 5}'
+```
 
 ---
 
 ## Next Steps
 
-- **[MCP Tools Reference](mcp-tools.md)** - Use Sekha via Model Context Protocol
-- **[Python SDK](../sdks/python-sdk.md)** - Python client library
-- **[JavaScript SDK](../sdks/javascript-sdk.md)** - JS/TS client library
-- **[Authentication Guide](authentication.md)** - Secure your API
+- **SDKs:** Use our [Python SDK](../sdks/python-sdk.md) or [JavaScript SDK](../sdks/javascript-sdk.md)
+- **MCP Integration:** See [MCP Tools](mcp-tools.md) for Claude Desktop
+- **Error Handling:** Check [Error Codes](error-codes.md)
+- **Authentication:** Read [Authentication Guide](authentication.md)
+
+---
+
+*API Version: v1 - Last Updated: January 2026*

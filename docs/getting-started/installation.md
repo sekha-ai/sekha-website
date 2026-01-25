@@ -1,109 +1,147 @@
 # Installation Guide
 
-Complete installation options for Sekha AI Memory Controller.
+Sekha supports multiple installation methods. Choose the one that best fits your needs.
 
-## Choose Your Installation Method
+## Recommended: Docker Compose
 
-=== "Docker (Recommended)"
-
-    **Best for:** Most users, production deployments
-    
-    - ✅ All dependencies included
-    - ✅ Easy upgrades
-    - ✅ Consistent across platforms
-    - ✅ Production-ready configuration
-
-=== "From Source"
-
-    **Best for:** Developers, contributors
-    
-    - ✅ Latest code
-    - ✅ Customization
-    - ✅ Learning the codebase
-    - ⚠️ Requires Rust toolchain
-
-=== "Pre-built Binary"
-
-    **Best for:** Single-user, minimal setup
-    
-    - ✅ Fastest installation
-    - ✅ No build required
-    - ✅ Portable
-    - ⚠️ Manual dependency management
-
-## Method 1: Docker (Recommended)
+**Best for:** Most users, teams, consistent environment, production
 
 ### Prerequisites
 
-- Docker 20.10+
+- Docker Desktop 24.0+ or Docker Engine 24.0+
 - Docker Compose 2.0+
-- 8GB RAM (16GB recommended)
-- 10GB disk space
+- 4GB free disk space
+- 2GB available RAM
 
-### Installation Steps
+### Quick Install
 
 ```bash
-# 1. Clone deployment repository
+# Clone deployment repository
 git clone https://github.com/sekha-ai/sekha-docker.git
 cd sekha-docker
 
-# 2. Review configuration
-cat docker-compose.prod.yml
+# Copy example configuration
+cp config.example.toml config.toml
 
-# 3. (Optional) Customize environment
-cp .env.example .env
-edit .env  # Update API keys, ports, etc.
+# Edit configuration (see Configuration section below)
+nano config.toml
 
-# 4. Start services
-docker compose -f docker-compose.prod.yml up -d
+# Start all services
+docker compose up -d
 
-# 5. Verify installation
+# Verify installation
 curl http://localhost:8080/health
 ```
 
 ### What Gets Installed
 
-- **Sekha Controller** - Rust binary in Alpine Linux container
-- **Sekha LLM Bridge** - Python service with Ollama integration
-- **ChromaDB** - Vector database for semantic search
-- **Ollama** - Local LLM runtime with nomic-embed-text model
+The default `docker-compose.yml` includes:
 
-### Docker Image Variants
+| Service | Port | Description |
+|---------|------|-------------|
+| `sekha-controller` | 8080 | Main API server (Rust) |
+| `sekha-bridge` | 5001 | LLM operations (Python) |
+| `chromadb` | 8000 | Vector database |
+| `ollama` | 11434 | Local LLM runtime |
+
+**Optional services** (in `docker-compose.full.yml`):
+
+- PostgreSQL (port 5432) - For multi-user deployments
+- Redis (port 6379) - For caching and scaling
+
+### Variants
 
 ```bash
-# Latest stable
-docker pull ghcr.io/sekha-ai/sekha-controller:latest
+# Development (hot reload, debug)
+docker compose -f docker-compose.dev.yml up
 
-# Specific version
-docker pull ghcr.io/sekha-ai/sekha-controller:v0.1.1
+# Production (optimized)
+docker compose -f docker-compose.prod.yml up -d
 
-# Development (latest main)
-docker pull ghcr.io/sekha-ai/sekha-controller:edge
-
-# Multi-arch support (amd64/arm64)
-docker pull ghcr.io/sekha-ai/sekha-controller:latest
+# Full stack (includes monitoring)
+docker compose -f docker-compose.full.yml up -d
 ```
 
-## Method 2: From Source
+---
+
+## Local Binary
+
+**Best for:** Developers, minimal setup, offline use
+
+### Option A: Pre-built Binary
+
+```bash
+# Download latest release
+wget https://github.com/sekha-ai/sekha-controller/releases/latest/download/sekha-controller-linux-x86_64
+
+# Make executable
+chmod +x sekha-controller-linux-x86_64
+
+# Move to PATH
+sudo mv sekha-controller-linux-x86_64 /usr/local/bin/sekha-controller
+
+# Initialize configuration
+sekha-controller setup
+
+# Start server
+sekha-controller start
+```
+
+**Supported platforms:**
+- Linux (x86_64, ARM64)
+- macOS (x86_64, Apple Silicon)
+- Windows (x86_64)
+
+### Option B: Cargo Install
+
+!!! note "Not Yet Available"
+    
+    The Rust crate is not yet published to crates.io due to upstream dependencies.
+    Use GitHub installation instead:
+    
+    ```bash
+    cargo install --git https://github.com/sekha-ai/sekha-controller
+    ```
+
+### Option C: Install Script
+
+```bash
+curl -sSL https://install.sekha.dev | bash
+```
+
+This script:
+1. Detects your OS and architecture
+2. Downloads the correct binary
+3. Installs to `/usr/local/bin`
+4. Creates `~/.sekha/config.toml`
+5. Sets up systemd service (Linux)
+
+### Dependencies
+
+You'll need **Ollama** for embeddings:
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Pull embedding model
+ollama pull nomic-embed-text
+
+# Start Ollama (runs on localhost:11434)
+ollama serve
+```
+
+---
+
+## Build from Source
+
+**Best for:** Contributors, custom builds
 
 ### Prerequisites
 
-- **Rust 1.83+** - Install from [rustup.rs](https://rustup.rs/)
-- **Git**
-- **SQLite3** development libraries
-- **pkg-config**
-
-#### Install Prerequisites
-
-=== "macOS"
-
-    ```bash
-    # Install Rust
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-    
-    # Install dependencies
-    brew install pkg-config sqlite
-    ```
+- Rust 1.83+ (`rustup` recommended)
+- SQLite3 development headers
+- Build tools (gcc, make)
 
 === "Ubuntu/Debian"
 
@@ -112,294 +150,279 @@ docker pull ghcr.io/sekha-ai/sekha-controller:latest
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     
     # Install dependencies
-    sudo apt update
-    sudo apt install -y build-essential pkg-config libsqlite3-dev
+    sudo apt install build-essential libsqlite3-dev pkg-config
     ```
 
-=== "Fedora/RHEL"
+=== "macOS"
 
     ```bash
     # Install Rust
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     
-    # Install dependencies
-    sudo dnf install -y gcc pkg-config sqlite-devel
+    # SQLite comes pre-installed
+    # Install build tools if needed
+    xcode-select --install
     ```
 
 === "Windows"
 
-    ```powershell
-    # Install Rust from https://rustup.rs/
-    
-    # Install Visual Studio Build Tools
-    # Or use MSVC from Visual Studio
-    
-    # SQLite will be handled by cargo
-    ```
+    1. Install [Rust](https://www.rust-lang.org/tools/install)
+    2. Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
+    3. Install [SQLite](https://www.sqlite.org/download.html)
 
-### Build from Source
+### Build Steps
 
 ```bash
-# 1. Clone repository
+# Clone repository
 git clone https://github.com/sekha-ai/sekha-controller.git
 cd sekha-controller
 
-# 2. Build release binary
+# Build release binary
 cargo build --release
 
-# 3. Binary location
+# Binary location
 ./target/release/sekha-controller
 
-# 4. (Optional) Install globally
+# Optional: Install globally
 cargo install --path .
-
-# 5. Verify installation
-sekha-controller --version
 ```
 
-### Install Dependencies
-
-Sekha Controller requires external services:
+### Development Build
 
 ```bash
-# Start ChromaDB
-docker run -d \
-  --name chroma \
-  -p 8000:8000 \
-  -v chroma_data:/chroma/chroma \
-  chromadb/chroma:latest
+# Clone with all submodules
+git clone --recursive https://github.com/sekha-ai/sekha-controller.git
+cd sekha-controller
 
-# Start Ollama
-docker run -d \
-  --name ollama \
-  -p 11434:11434 \
-  -v ollama_data:/root/.ollama \
-  ollama/ollama:latest
+# Start dependencies (ChromaDB + Ollama)
+docker compose -f docker-compose.dev.yml up -d
 
-# Download embedding model
-docker exec ollama ollama pull nomic-embed-text
+# Run in development mode (auto-reload)
+cargo watch -x run
+
+# Run tests
+cargo test
+
+# Check code coverage
+cargo tarpaulin --out Html
 ```
 
-### Configuration
+---
 
-Create `~/.sekha/config.toml`:
+## Kubernetes
+
+**Best for:** Production, enterprises, high availability
+
+### Prerequisites
+
+- Kubernetes cluster 1.25+
+- `kubectl` configured
+- Helm 3.x (optional but recommended)
+
+### Helm Installation (Recommended)
+
+```bash
+# Add Sekha Helm repository
+helm repo add sekha https://charts.sekha.dev
+helm repo update
+
+# Install with default values
+helm install my-sekha sekha/sekha-controller
+
+# Install with custom values
+helm install my-sekha sekha/sekha-controller \
+  --set replicaCount=3 \
+  --set storage.size=100Gi \
+  --namespace sekha \
+  --create-namespace
+```
+
+### Raw Manifests
+
+```bash
+# Clone deployment repo
+git clone https://github.com/sekha-ai/sekha-docker.git
+cd sekha-docker/k8s
+
+# Create namespace
+kubectl create namespace sekha
+
+# Apply manifests
+kubectl apply -f configmap.yaml
+kubectl apply -f pvc.yaml
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+
+# Check status
+kubectl get pods -n sekha
+```
+
+See [Kubernetes Deployment Guide](../deployment/kubernetes.md) for details.
+
+---
+
+## Cloud Platforms
+
+### AWS (ECS + Fargate)
+
+```bash
+cd cloud/aws
+terraform init
+terraform apply
+```
+
+See [AWS Deployment Guide](../deployment/aws.md)
+
+### Azure (Container Instances)
+
+```bash
+cd cloud/azure
+./deploy.sh
+```
+
+See [Azure Deployment Guide](../deployment/azure.md)
+
+### GCP (Cloud Run)
+
+```bash
+cd cloud/gcp
+./deploy.sh
+```
+
+See [GCP Deployment Guide](../deployment/gcp.md)
+
+---
+
+## Post-Installation
+
+### 1. Verify Installation
+
+```bash
+# Check health
+curl http://localhost:8080/health
+
+# Expected response
+{
+  "status": "healthy",
+  "timestamp": "2026-01-25T14:30:00Z",
+  "checks": {
+    "database": {"status": "ok"},
+    "chroma": {"status": "ok"}
+  }
+}
+```
+
+### 2. Change API Key
+
+!!! warning "Security"
+    The default API key `dev-key-replace-in-production` should be changed immediately!
+
+Edit `config.toml`:
 
 ```toml
 [server]
-port = 8080
-host = "0.0.0.0"
-api_key = "your-secure-32-plus-character-api-key"
-
-[database]
-url = "sqlite://~/.sekha/data/sekha.db"
-
-[vector_store]
-chroma_url = "http://localhost:8000"
-collection_name = "sekha_memory"
-
-[llm]
-ollama_url = "http://localhost:11434"
-embedding_model = "nomic-embed-text:latest"
+api_key = "sk-sekha-your-secure-key-min-32-chars-long"
 ```
 
-### Run
+Generate a secure key:
 
 ```bash
-# Run directly
-cargo run --release
-
-# Or if installed globally
-sekha-controller
-
-# Run with custom config
-sekha-controller --config /path/to/config.toml
-
-# Run in background
-nohup sekha-controller > ~/.sekha/logs/controller.log 2>&1 &
+openssl rand -base64 32
 ```
 
-## Method 3: Pre-built Binary
+### 3. Configure LLM Provider
 
-### Download Binary
+=== "Ollama (Default)"
 
-Download from [GitHub Releases](https://github.com/sekha-ai/sekha-controller/releases):
+    ```toml
+    [llm]
+    provider = "ollama"
+    ollama_url = "http://localhost:11434"
+    embedding_model = "nomic-embed-text"
+    ```
 
-```bash
-# Linux x86_64
-wget https://github.com/sekha-ai/sekha-controller/releases/latest/download/sekha-controller-linux-x86_64
-chmod +x sekha-controller-linux-x86_64
-sudo mv sekha-controller-linux-x86_64 /usr/local/bin/sekha-controller
+=== "OpenAI (Future)"
 
-# macOS (Intel)
-wget https://github.com/sekha-ai/sekha-controller/releases/latest/download/sekha-controller-macos-x86_64
-chmod +x sekha-controller-macos-x86_64
-sudo mv sekha-controller-macos-x86_64 /usr/local/bin/sekha-controller
+    ```toml
+    [llm]
+    provider = "openai"
+    api_key = "sk-..."
+    embedding_model = "text-embedding-3-small"
+    ```
 
-# macOS (Apple Silicon)
-wget https://github.com/sekha-ai/sekha-controller/releases/latest/download/sekha-controller-macos-aarch64
-chmod +x sekha-controller-macos-aarch64
-sudo mv sekha-controller-macos-aarch64 /usr/local/bin/sekha-controller
-```
+=== "Anthropic (Future)"
 
-### Install Dependencies
+    ```toml
+    [llm]
+    provider = "anthropic"
+    api_key = "sk-ant-..."
+    embedding_model = "voyage-2"
+    ```
 
-Same as "From Source" method - you need:
-- ChromaDB
-- Ollama with nomic-embed-text model
+### 4. Test First Conversation
 
-### Verify
+See [First Conversation Tutorial](first-conversation.md)
 
-```bash
-sekha-controller --version
-# Expected: sekha-controller 0.1.1
-```
-
-## Install LLM Bridge (All Methods)
-
-The LLM Bridge handles embeddings and summarization:
-
-```bash
-# Clone bridge repository
-git clone https://github.com/sekha-ai/sekha-llm-bridge.git
-cd sekha-llm-bridge
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run bridge
-python -m sekha_llm_bridge.main
-
-# Or use Docker
-docker run -d \
-  --name sekha-llm-bridge \
-  -p 5001:5001 \
-  --network host \
-  ghcr.io/sekha-ai/sekha-llm-bridge:latest
-```
-
-## Verification Checklist
-
-After installation, verify all components:
-
-```bash
-# 1. Controller health
-curl http://localhost:8080/health
-# Expected: {"status":"healthy"}
-
-# 2. ChromaDB health
-curl http://localhost:8000/api/v1/heartbeat
-# Expected: {"nanosecond heartbeat": ...}
-
-# 3. Ollama health
-curl http://localhost:11434/api/tags
-# Expected: {"models": [{"name": "nomic-embed-text", ...}]}
-
-# 4. LLM Bridge health
-curl http://localhost:5001/health
-# Expected: {"status":"healthy"}
-
-# 5. Test conversation storage
-curl -X POST http://localhost:8080/api/v1/conversations \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key" \
-  -d '{"label":"Test","messages":[{"role":"user","content":"Test"}]}'
-# Expected: {"id":"...","conversation_id":"..."}
-```
-
-## System Service (Optional)
-
-### systemd Service (Linux)
-
-Create `/etc/systemd/system/sekha-controller.service`:
-
-```ini
-[Unit]
-Description=Sekha Controller
-After=network.target
-
-[Service]
-Type=simple
-User=sekha
-WorkingDirectory=/opt/sekha
-ExecStart=/usr/local/bin/sekha-controller
-Restart=on-failure
-RestartSec=5s
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and start:
-```bash
-sudo systemctl enable sekha-controller
-sudo systemctl start sekha-controller
-sudo systemctl status sekha-controller
-```
-
-### launchd Service (macOS)
-
-Create `~/Library/LaunchAgents/dev.sekha.controller.plist`:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>dev.sekha.controller</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/usr/local/bin/sekha-controller</string>
-  </array>
-  <key>RunAtLoad</key>
-  <true/>
-  <key>KeepAlive</key>
-  <true/>
-</dict>
-</plist>
-```
-
-Load service:
-```bash
-launchctl load ~/Library/LaunchAgents/dev.sekha.controller.plist
-launchctl start dev.sekha.controller
-```
+---
 
 ## Upgrading
 
 ### Docker
 
 ```bash
+cd sekha-docker
+
 # Pull latest images
-docker compose -f docker-compose.prod.yml pull
+docker compose pull
 
 # Restart with new images
-docker compose -f docker-compose.prod.yml up -d
-```
-
-### From Source
-
-```bash
-cd sekha-controller
-git pull origin main
-cargo build --release
-sudo systemctl restart sekha-controller
+docker compose up -d
 ```
 
 ### Binary
 
-Download latest release and replace binary, then restart service.
+```bash
+# Download new version
+wget https://github.com/sekha-ai/sekha-controller/releases/latest/download/sekha-controller-linux-x86_64
+
+# Stop old version
+sudo systemctl stop sekha-controller
+
+# Replace binary
+sudo mv sekha-controller-linux-x86_64 /usr/local/bin/sekha-controller
+chmod +x /usr/local/bin/sekha-controller
+
+# Start new version
+sudo systemctl start sekha-controller
+```
+
+### Kubernetes
+
+```bash
+# Update Helm chart
+helm upgrade my-sekha sekha/sekha-controller
+
+# Or update image directly
+kubectl set image deployment/sekha-controller \
+  sekha-controller=ghcr.io/sekha-ai/sekha-controller:v1.2.0 \
+  -n sekha
+```
+
+---
 
 ## Uninstalling
 
 ### Docker
 
 ```bash
-cd sekha-docker
-docker compose -f docker-compose.prod.yml down -v  # ⚠️ Removes data
+# Stop and remove containers
+docker compose down
+
+# Remove data volumes (DESTRUCTIVE)
+docker compose down -v
 ```
 
-### Manual
+### Binary
 
 ```bash
 # Stop service
@@ -409,21 +432,75 @@ sudo systemctl disable sekha-controller
 # Remove binary
 sudo rm /usr/local/bin/sekha-controller
 
-# Remove data (⚠️ cannot be undone)
+# Remove data (optional)
 rm -rf ~/.sekha
 ```
 
-## Next Steps
+### Kubernetes
 
-- **[Configure Sekha](configuration.md)** - Customize settings
-- **[First Conversation](first-conversation.md)** - Complete tutorial
-- **[API Reference](../api-reference/rest-api.md)** - Explore endpoints
-- **[Deployment Guide](../deployment/index.md)** - Production deployment
+```bash
+# Helm
+helm uninstall my-sekha -n sekha
+
+# Raw manifests
+kubectl delete namespace sekha
+```
+
+---
 
 ## Troubleshooting
 
-If you encounter issues, see:
+??? question "Port 8080 already in use?"
 
-- [Common Issues](../troubleshooting/common-issues.md)
-- [Debugging Guide](../troubleshooting/debugging.md)
-- [Discord Community](https://discord.gg/sekha)
+    **Change the port in config.toml:**
+    
+    ```toml
+    [server]
+    port = 9090
+    ```
+    
+    Or use environment variable:
+    ```bash
+    export SEKHA_SERVER_PORT=9090
+    ```
+
+??? question "ChromaDB connection fails?"
+
+    **Ensure ChromaDB is running:**
+    
+    ```bash
+    docker run -d -p 8000:8000 chromadb/chroma
+    ```
+    
+    **Or install locally:**
+    ```bash
+    pip install chromadb
+    chroma run --host 0.0.0.0 --port 8000
+    ```
+
+??? question "Ollama not found?"
+
+    **Install Ollama:**
+    
+    ```bash
+    curl -fsSL https://ollama.com/install.sh | sh
+    ollama serve
+    ollama pull nomic-embed-text
+    ```
+
+---
+
+## Next Steps
+
+- [Configure Sekha](configuration.md) - Customize for your needs
+- [First Conversation](first-conversation.md) - Store your first memory
+- [API Reference](../api-reference/rest-api.md) - Full API documentation
+- [Deployment Guides](../deployment/docker-compose.md) - Production deployment
+
+---
+
+!!! question "Need Help?"
+
+    - [:material-github: GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues)
+    - [:simple-discord: Discord Community](https://discord.gg/sekha)
+    - [:material-email: Email Support](mailto:hello@sekha.dev)

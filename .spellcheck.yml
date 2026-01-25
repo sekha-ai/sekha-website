@@ -6,11 +6,24 @@ matrix:
     encoding: utf-8
   pipeline:
   - pyspelling.filters.markdown:
+      markdown_extensions:
+      - pymdownx.superfences:
+      - pymdownx.highlight:
+      - pymdownx.tabbed:
   - pyspelling.filters.html:
-    comments: false
-    ignores:
-    - code
-    - pre
+      comments: false
+      ignores:
+      - code
+      - pre
   sources:
-  - '**/*.md'
-  default_encoding: utf-8
+  - 'docs/**/*.md'
+  - 'README.md'
+  - 'CONTRIBUTING.md'
+
+default_encoding: utf-8
+
+# Custom dictionary
+dictionary:
+  wordlists:
+  - .wordlist.txt
+  output: build/dictionary/hunspell.dic

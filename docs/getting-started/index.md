@@ -1,57 +1,117 @@
 # Getting Started with Sekha
 
-Welcome! This guide will help you install, configure, and start using Sekha AI Memory Controller.
+Welcome to Sekha! This guide will help you go from zero to storing your first AI conversation in under 10 minutes.
 
 ## What You'll Learn
 
-In this section, you'll learn how to:
-
-- Install Sekha using your preferred method
-- Configure the controller for your environment
-- Store and retrieve your first conversation
-- Understand basic memory operations
-
-## Quick Start Path
-
-Follow these guides in order:
-
-1. **[Quickstart](quickstart.md)** - Get running in 5 minutes with Docker
-2. **[Installation](installation.md)** - Detailed installation options
-3. **[Configuration](configuration.md)** - Customize Sekha for your needs
-4. **[First Conversation](first-conversation.md)** - Store and query your first memory
+- [Quickstart](quickstart.md) - 5-minute setup with Docker Compose
+- [Installation](installation.md) - All installation methods (Docker, binary, source)
+- [Configuration](configuration.md) - Customize Sekha for your needs
+- [First Conversation](first-conversation.md) - Store and retrieve your first memory
 
 ## Prerequisites
 
-Before starting, you should have:
+Before starting, ensure you have:
 
-- **Docker & Docker Compose** (recommended) OR
-- **Rust 1.83+** (for building from source) OR
-- **Pre-built binary** for your platform
+**For Docker installation (recommended):**
+- Docker Desktop or Docker Engine 24.0+
+- Docker Compose 2.0+
+- 4GB free disk space
+- 2GB available RAM
+
+**For local binary:**
+- Ollama (for embeddings) or OpenAI API key
+- 2GB free disk space
+- 1GB available RAM
 
 ## Choose Your Path
 
-=== "I want to try it now"
+=== "Quickest: Docker"
 
-    **[→ Quickstart Guide](quickstart.md)**
+    **Best for:** First-time users, testing, teams
     
-    Docker-based setup, running in 5 minutes.
-
-=== "I want full control"
-
-    **[→ Installation Guide](installation.md)**
+    ```bash
+    git clone https://github.com/sekha-ai/sekha-docker.git
+    cd sekha-docker
+    docker compose up -d
+    ```
     
-    All installation methods, building from source.
+    [:octicons-arrow-right-24: Full Quickstart Guide](quickstart.md)
 
-=== "I want to understand it first"
+=== "Flexible: Local Binary"
 
-    **[→ Architecture Overview](../architecture/overview.md)**
+    **Best for:** Developers, custom setups
     
-    Learn how Sekha works before installing.
+    ```bash
+    cargo install --git https://github.com/sekha-ai/sekha-controller
+    sekha-controller setup
+    sekha-controller start
+    ```
+    
+    [:octicons-arrow-right-24: Installation Guide](installation.md)
 
-## Need Help?
+=== "Production: Kubernetes"
 
-If you run into issues:
+    **Best for:** Enterprises, scale, HA
+    
+    ```bash
+    helm install sekha sekha/sekha-controller
+    ```
+    
+    [:octicons-arrow-right-24: Deployment Guide](../deployment/kubernetes.md)
 
-- Check [Common Issues](../troubleshooting/common-issues.md)
-- Ask in [Discord](https://discord.gg/sekha)
-- Open an [issue on GitHub](https://github.com/sekha-ai/sekha-controller/issues)
+## What Gets Installed
+
+A complete Sekha deployment includes:
+
+**Core Services:**
+- **Sekha Controller** (Rust) - Memory engine and API server
+- **LLM Bridge** (Python) - Embeddings and summarization
+- **ChromaDB** - Vector database for semantic search
+- **SQLite or PostgreSQL** - Structured data storage
+
+**Optional Services:**
+- **Ollama** - Local LLM runtime (free, private)
+- **Redis** - Caching and task queue (for scale)
+
+## System Architecture
+
+```mermaid
+graph TD
+    A[Your Application] -->|HTTP/MCP| B[Sekha Controller]
+    B -->|Store| C[SQLite/Postgres]
+    B -->|Embed| D[LLM Bridge]
+    B -->|Search| E[ChromaDB]
+    D -->|Generate| F[Ollama/OpenAI]
+    
+    style B fill:#4051b5
+    style D fill:#805ad5
+```
+
+## Next Steps
+
+Depending on your goal:
+
+**Just exploring?**  
+→ Start with the [Quickstart](quickstart.md) (5 minutes)
+
+**Ready to deploy?**  
+→ See [Installation Options](installation.md)
+
+**Need to customize?**  
+→ Review [Configuration](configuration.md)
+
+**Want to integrate?**  
+→ Check [API Reference](../api-reference/rest-api.md)
+
+---
+
+!!! question "Need Help?"
+
+    - [:material-github: GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues)
+    - [:simple-discord: Discord Community](https://discord.gg/sekha)
+    - [:material-email: Email Support](mailto:hello@sekha.dev)
+
+---
+
+[:octicons-arrow-right-24: Start Quickstart](quickstart.md){ .md-button .md-button--primary }

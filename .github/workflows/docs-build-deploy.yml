@@ -1,0 +1,67 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git-revision-date plugin
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Verify MkDocs configuration
+        run: |
+          mkdocs --version
+          python -c "import yaml; yaml.safe_load(open('mkdocs.yml'))"
+      
+      - name: Build documentation
+        run: |
+          mkdocs build --strict --verbose
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      
+      - name: Generate deployment summary
+        run: |
+          echo "## Documentation Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Documentation successfully built and deployed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 **Live URL:** https://docs.sekha.dev" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **Build Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- MkDocs Version: $(mkdocs --version)" >> $GITHUB_STEP_SUMMARY
+          echo "- Python Version: $(python --version)" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Deployed at: $(date -u)" >> $GITHUB_STEP_SUMMARY

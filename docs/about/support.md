@@ -12,7 +12,7 @@ We're here to help you succeed with Sekha. Choose the support channel that best 
 
 **Best for:** Quick questions, community discussions, sharing use cases
 
-💬 **Join our Discord:** [https://discord.gg/sekha](https://discord.gg/sekha)
+💬 **Join our Discord:** [https://discord.gg/7RUTmdd2](https://discord.gg/7RUTmdd2)
 
 **Channels:**
 
@@ -191,7 +191,7 @@ If you have a [commercial license](license.md), you receive priority support:
 
 - 🌟 [Good First Issues](https://github.com/sekha-ai/sekha-controller/labels/good-first-issue)
 - 🐞 [Bug Bounty Program](https://github.com/sekha-ai/sekha-controller/blob/main/SECURITY.md) (coming soon)
-- 💬 [Contributor Discord Channel](https://discord.gg/sekha)
+- 💬 [Contributor Discord Channel](https://discord.gg/7RUTmdd2)
 
 ---
 
@@ -231,7 +231,7 @@ If you have a [commercial license](license.md), you receive priority support:
 **Join our weekly community office hours:**
 
 💻 **When:** Wednesdays, 2:00 PM - 3:00 PM EST  
-📍 **Where:** [Discord voice channel](https://discord.gg/sekha)  
+📍 **Where:** [Discord voice channel](https://discord.gg/7RUTmdd2)  
 📅 **Calendar:** [Add to your calendar](https://calendar.google.com/calendar/sekha-office-hours)
 
 **What to expect:**
@@ -299,7 +299,7 @@ If you have a [commercial license](license.md), you receive priority support:
 
 | Purpose | Contact Method |
 |---------|----------------|
-| **General Questions** | [Discord](https://discord.gg/sekha) |
+| **General Questions** | [Discord](https://discord.gg/7RUTmdd2) |
 | **Bug Reports** | [GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues) |
 | **Feature Requests** | [GitHub Discussions](https://github.com/sekha-ai/sekha-controller/discussions) |
 | **Security Issues** | [security@sekha.dev](mailto:security@sekha.dev) |

@@ -1,28 +1,20 @@
 # MCP Tools Reference
 
-## Overview
-
-Sekha provides native [Model Context Protocol (MCP)](https://modelcontextprotocol.io) support, enabling Claude Desktop and other MCP-compatible AI tools to access your memory seamlessly.
-
-**What is MCP?** A protocol developed by Anthropic for connecting AI assistants to external tools and data sources.
-
-**Sekha MCP Server** provides 7 tools that Claude can use to interact with your memory.
-
----
+Sekha provides native [Model Context Protocol (MCP)](https://modelcontextprotocol.io) support through **7 tools** that enable Claude Desktop and other MCP-compatible AI assistants to access your memory seamlessly.
 
 ## Quick Setup (Claude Desktop)
 
-### 1. Install Docker
+### 1. Install Sekha
 
-The Sekha MCP server runs as a Docker container.
+Follow the [installation guide](../getting-started/installation.md) to get Sekha running.
 
 ### 2. Configure Claude Desktop
 
 Edit Claude Desktop's configuration file:
 
-**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`  
-**Linux:** `~/.config/Claude/claude_desktop_config.json`
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux:** `~/.config/Claude/claude_desktop_config.json`
 
 Add the Sekha MCP server:
 
@@ -32,10 +24,7 @@ Add the Sekha MCP server:
     "sekha": {
       "command": "docker",
       "args": [
-        "run",
-        "-i",
-        "--rm",
-        "--network=host",
+        "run", "-i", "--rm", "--network=host",
         "-e", "SEKHA_API_URL=http://localhost:8080",
         "-e", "SEKHA_API_KEY=your-api-key-here",
         "ghcr.io/sekha-ai/sekha-mcp:latest"
@@ -47,191 +36,181 @@ Add the Sekha MCP server:
 
 ### 3. Restart Claude Desktop
 
-You should see "Sekha" in the tools menu (hammer icon).
+You should see "Sekha" in the tools menu (🔨 hammer icon).
 
 ### 4. Test It
 
-Ask Claude:
-
-> "Store this conversation in Sekha with label 'Test Memory'"
+Ask Claude: _"Store this conversation in Sekha with label 'Test Memory'"_
 
 Claude will use the `memory_store` tool automatically.
 
 ---
 
-## Available Tools
+## Available Tools (7 Total)
 
-### `memory_store`
+### 1. `memory_store`
 
-**Purpose:** Store the current conversation in Sekha memory.
+**Purpose:** Store the current conversation in Sekha memory with automatic labeling and embedding.
 
 **When Claude Uses It:**
 
 - User asks to "remember this" or "save this conversation"
 - User wants to store context for future reference
-- Manually invoked via tool selection
+- Manual tool invocation
 
-**Parameters:**
+**Request:**
 
 ```json
 {
-  "label": "Project Planning Session",
-  "folder": "/work/new-feature",
-  "importance": 7,
+  "label": "API Design Discussion",
+  "folder": "/work/backend",
   "messages": [
-    {"role": "user", "content": "Let's plan the authentication feature"},
-    {"role": "assistant", "content": "Great! Here's my recommendation..."}
-  ]
+    {"role": "user", "content": "Let's design the authentication API"},
+    {"role": "assistant", "content": "Great! I recommend OAuth 2.0..."}
+  ],
+  "importance_score": 7
 }
 ```
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `label` | string | Yes | Human-readable label for this conversation |
-| `folder` | string | No | Folder path (e.g., `/work/projects`) |
-| `importance` | integer | No | 1-10 scale (default: 5) |
-| `messages` | array | Yes | Conversation messages |
+**Parameters:**
 
-**Example Prompts:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `label` | string | Yes | - | Human-readable conversation label |
+| `folder` | string | Yes | `/` | Folder path for organization |
+| `messages` | array | Yes | - | Array of `{role, content}` objects |
+| `importance_score` | integer | No | `5` | 1-10 scale for pruning decisions |
 
-- "Remember this conversation as 'API Design Discussion'"
-- "Store this in my work folder with label 'Sprint Planning'"
-- "Save this conversation with high importance"
-
-**Returns:**
+**Response:**
 
 ```json
 {
   "success": true,
-  "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
-  "label": "Project Planning Session",
-  "message": "Conversation stored successfully with 2 messages"
+  "data": {
+    "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "label": "API Design Discussion",
+    "folder": "/work/backend"
+  },
+  "error": null
 }
 ```
 
+**Example Prompts:**
+
+- "Remember this conversation as 'Sprint Planning'"
+- "Store this in /work/projects with high importance"
+- "Save this discussion for future reference"
+
 ---
 
-### `memory_query`
+### 2. `memory_search`
 
-**Purpose:** Search your memory using semantic search.
+**Purpose:** Search stored conversations using semantic similarity search.
 
 **When Claude Uses It:**
 
 - User asks "What did we discuss about X?"
-- User requests information from past conversations
-- Claude needs context to answer a follow-up question
+- User needs information from past conversations
+- Claude needs context for follow-up questions
 
-**Parameters:**
+**Request:**
 
 ```json
 {
   "query": "What decisions did we make about authentication?",
-  "limit": 5,
-  "folder": "/work"
+  "filters": {"folder": "/work"},
+  "limit": 10,
+  "offset": 0
 }
 ```
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `query` | string | Yes | Natural language search query |
-| `limit` | integer | No | Max results (default: 10, max: 50) |
-| `folder` | string | No | Filter to specific folder |
-
-**Example Prompts:**
-
-- "What did we discuss about API design last week?"
-- "Search my memory for OAuth discussions"
-- "Find conversations about the new feature"
-
-**Returns:**
-
-```json
-{
-  "results": [
-    {
-      "conversation_id": "...",
-      "label": "API Design Discussion",
-      "folder": "/work/backend",
-      "relevance_score": 0.92,
-      "snippet": "We decided to use OAuth 2.0 with JWT tokens...",
-      "created_at": "2026-01-20T15:30:00Z"
-    }
-  ],
-  "total_found": 3
-}
-```
-
----
-
-### `memory_get_context`
-
-**Purpose:** Build optimal context for Claude's current conversation by retrieving relevant past conversations.
-
-**When Claude Uses It:**
-
-- User references past work ("continue where we left off")
-- Claude needs background to answer complex questions
-- User explicitly requests context assembly
 
 **Parameters:**
 
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `query` | string | Yes | - | Natural language search query |
+| `filters` | object | No | `null` | JSON filters (folder, label, etc.) |
+| `limit` | integer | No | `10` | Max results to return |
+| `offset` | integer | No | `0` | Pagination offset |
+
+**Response:**
+
 ```json
 {
-  "query": "Continue working on the authentication feature",
-  "context_budget": 8000,
-  "preferred_labels": ["API Design", "Authentication"]
+  "success": true,
+  "data": {
+    "query": "authentication decisions",
+    "total_results": 3,
+    "limit": 10,
+    "results": [
+      {
+        "conversation_id": "...",
+        "message_id": "...",
+        "score": 0.92,
+        "content": "We decided to use OAuth 2.0 with JWT tokens...",
+        "label": "API Design Discussion",
+        "folder": "/work/backend",
+        "timestamp": "2026-01-20T15:30:00",
+        "metadata": {}
+      }
+    ]
+  },
+  "error": null
 }
 ```
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `query` | string | Yes | What the user wants to do next |
-| `context_budget` | integer | No | Max tokens (default: 4000) |
-| `preferred_labels` | array | No | Prioritize these labels |
 
 **Example Prompts:**
 
-- "Load context about our API project"
-- "What's the background on the authentication feature?"
-- "Continue our discussion from yesterday"
-
-**Returns:**
-
-```json
-{
-  "context": [
-    {
-      "label": "API Design Discussion",
-      "messages": [{"role": "user", "content": "..."}, ...],
-      "relevance_score": 0.95
-    }
-  ],
-  "total_tokens": 3200,
-  "conversations_included": 4
-}
-```
-
-Claude automatically incorporates this context into its understanding.
+- "Search for conversations about Python type hints"
+- "What did we discuss about authentication last week?"
+- "Find all mentions of OAuth in my work folder"
 
 ---
 
-### `memory_create_label`
+### 3. `memory_update`
 
-**Purpose:** Create or update conversation labels and folders.
+**Purpose:** Update conversation metadata (label, folder, status, importance).
 
 **When Claude Uses It:**
 
-- User wants to organize conversations
-- User renames or moves a conversation
-- Claude suggests better organization
+- User wants to rename or reorganize conversations
+- User changes importance or status
+- Conversation needs to be archived
 
-**Parameters:**
+**Request:**
 
 ```json
 {
   "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
   "label": "Completed: API Design",
-  "folder": "/work/archive/2026-q1"
+  "folder": "/work/archive/2026-q1",
+  "status": "archived",
+  "importance_score": 8
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `conversation_id` | UUID | Yes | Conversation to update |
+| `label` | string | No | New label |
+| `folder` | string | No | New folder path |
+| `status` | string | No | `active` or `archived` |
+| `importance_score` | integer | No | 1-10 scale |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+    "updated_fields": ["label/folder"],
+    "message": "Conversation updated successfully"
+  },
+  "error": null
 }
 ```
 
@@ -239,251 +218,402 @@ Claude automatically incorporates this context into its understanding.
 
 - "Rename that conversation to 'Completed Project'"
 - "Move the API discussion to my archive folder"
-- "Organize this conversation under /work/auth"
+- "Mark this conversation as high importance"
 
 ---
 
-### `memory_prune_suggest`
+### 4. `memory_prune`
 
-**Purpose:** Get recommendations for cleaning up old or low-value conversations.
+**Purpose:** Get intelligent suggestions for archiving or removing old conversations.
 
 **When Claude Uses It:**
 
 - User asks "what can I delete?"
-- User wants to clean up memory
-- Storage optimization needed
+- User wants to free up space
+- Memory optimization needed
 
-**Parameters:**
+**Request:**
 
 ```json
 {
   "threshold_days": 90,
-  "min_importance": 3
+  "importance_threshold": 5.0
 }
 ```
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `threshold_days` | integer | No | Consider conversations older than X days |
-| `min_importance` | integer | No | Consider conversations with importance ≤ X |
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `threshold_days` | integer | No | `30` | Consider conversations older than X days |
+| `importance_threshold` | float | No | `5.0` | Consider conversations with score ≤ X |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "threshold_days": 90,
+    "importance_threshold": 5.0,
+    "total_suggestions": 8,
+    "estimated_token_savings": 12500,
+    "suggestions": [
+      {
+        "conversation_id": "...",
+        "conversation_label": "Random Chat",
+        "last_accessed": "2025-10-15T10:00:00",
+        "message_count": 15,
+        "token_estimate": 2500,
+        "importance_score": 3.0,
+        "preview": "First 100 chars of conversation...",
+        "recommendation": "archive"
+      }
+    ]
+  },
+  "error": null
+}
+```
 
 **Example Prompts:**
 
 - "What old conversations can I archive?"
 - "Find conversations I don't need anymore"
-- "Suggest memory cleanup"
-
-**Returns:**
-
-```json
-{
-  "candidates": [
-    {
-      "conversation_id": "...",
-      "label": "Random Chat",
-      "age_days": 120,
-      "importance": 2,
-      "reason": "Low importance, not accessed in 90+ days"
-    }
-  ],
-  "total_candidates": 8,
-  "potential_space_saved_mb": 24
-}
-```
+- "Suggest memory cleanup for the past 6 months"
 
 ---
 
-### `memory_export`
+### 5. `memory_get_context`
 
-**Purpose:** Export conversations in various formats.
+**Purpose:** Retrieve full context for a specific conversation.
 
 **When Claude Uses It:**
 
-- User wants to export data
-- User needs backup
-- User wants to share conversations
+- User references a specific conversation ID
+- Claude needs complete metadata
+- Context assembly for related tools
+
+**Request:**
+
+```json
+{
+  "conversation_id": "123e4567-e89b-12d3-a456-426614174000"
+}
+```
 
 **Parameters:**
 
-```json
-{
-  "format": "markdown",
-  "folder": "/work",
-  "start_date": "2026-01-01",
-  "end_date": "2026-01-31"
-}
-```
-
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `format` | string | Yes | `json`, `markdown`, or `csv` |
-| `folder` | string | No | Export specific folder only |
-| `start_date` | string | No | ISO 8601 date (e.g., `2026-01-01`) |
-| `end_date` | string | No | ISO 8601 date |
+| `conversation_id` | UUID | Yes | Conversation ID to retrieve |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+    "label": "API Design Discussion",
+    "status": "active",
+    "folder": "/work/backend",
+    "importance_score": 7,
+    "word_count": 2500,
+    "session_count": 3,
+    "created_at": "2026-01-20T15:30:00",
+    "updated_at": "2026-01-25T10:00:00"
+  },
+  "error": null
+}
+```
 
 **Example Prompts:**
 
-- "Export all my work conversations from January"
-- "Give me a markdown export of this project"
-- "Export my memory as JSON for backup"
-
-**Returns:**
-
-```json
-{
-  "download_url": "https://...",
-  "format": "markdown",
-  "conversations_exported": 23,
-  "size_mb": 1.2
-}
-```
+- "Show me details for conversation 123e4567..."
+- "What's the metadata for that API discussion?"
+- "Get context for the planning conversation"
 
 ---
 
-### `memory_stats`
+### 6. `memory_export`
 
-**Purpose:** Get usage statistics about your memory.
+**Purpose:** Export conversations in JSON or Markdown format.
 
 **When Claude Uses It:**
 
-- User asks "how much memory am I using?"
-- User wants usage overview
-- Automatic context gathering
+- User wants to backup data
+- User needs to share conversations
+- Data export for analysis
 
-**Parameters:** None
-
-**Example Prompts:**
-
-- "How many conversations do I have stored?"
-- "Show me my memory usage statistics"
-- "What's my memory status?"
-
-**Returns:**
+**Request:**
 
 ```json
 {
-  "total_conversations": 247,
-  "active_conversations": 215,
-  "archived_conversations": 32,
-  "total_messages": 8432,
-  "storage_mb": 45,
-  "labels": 18,
-  "folders": 6,
-  "date_range": {
-    "oldest": "2025-06-15T10:00:00Z",
-    "newest": "2026-01-25T20:00:00Z"
-  }
+  "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+  "format": "markdown",
+  "include_metadata": true
 }
 ```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `conversation_id` | UUID | Yes | - | Conversation to export |
+| `format` | string | No | `"json"` | Export format: `json` or `markdown` |
+| `include_metadata` | boolean | No | `true` | Include metadata in export |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "conversation": {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "label": "API Design Discussion",
+      "folder": "/work/backend",
+      "status": "active",
+      "importance_score": 7,
+      "word_count": 2500,
+      "session_count": 3,
+      "created_at": "2026-01-20T15:30:00",
+      "updated_at": "2026-01-25T10:00:00"
+    },
+    "messages": [
+      {"role": "user", "content": "...", "timestamp": "..."},
+      {"role": "assistant", "content": "...", "timestamp": "..."}
+    ],
+    "format": "markdown",
+    "include_metadata": true
+  },
+  "error": null
+}
+```
+
+**Example Prompts:**
+
+- "Export this conversation as markdown"
+- "Give me a JSON backup of the API discussion"
+- "Export conversation 123e4567 without metadata"
+
+---
+
+### 7. `memory_stats`
+
+**Purpose:** Get statistics about stored conversations (global or filtered by folder/label).
+
+**When Claude Uses It:**
+
+- User asks about memory usage
+- User wants overview of conversations
+- Dashboard-style information needed
+
+**Request (Global Stats):**
+
+```json
+{}
+```
+
+**Request (Folder Stats):**
+
+```json
+{
+  "folder": "/work"
+}
+```
+
+**Request (Label Stats):**
+
+```json
+{
+  "label": "API Design"
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `folder` | string | No | Get stats for specific folder |
+| `label` | string | No | Get stats for specific label |
+
+!!! warning "Mutual Exclusivity"
+    Cannot specify both `folder` and `label` - choose one or neither for global stats.
+
+**Response (Global):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "total_conversations": 247,
+    "average_importance": 5.8,
+    "folders": ["/", "/work", "/work/backend", "/personal"]
+  },
+  "error": null
+}
+```
+
+**Response (Folder/Label):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "total_conversations": 42,
+    "average_importance": 6.5,
+    "folders": ["/work"]  // or "labels": ["API Design"]
+  },
+  "error": null
+}
+```
+
+**Example Prompts:**
+
+- "How many conversations do I have?"
+- "Show stats for my work folder"
+- "What's my memory usage?"
 
 ---
 
 ## Example Workflows
 
-### Workflow 1: Project Planning
+### Workflow 1: Store and Retrieve
 
-**User:** "I'm starting a new authentication feature. Search my memory for related discussions."
+**User:** _"Remember this conversation about OAuth implementation"_
 
-**Claude uses:** `memory_query`  
-**Query:** `"authentication feature design"`  
-**Result:** Claude finds 3 past conversations about OAuth, JWT, and security.
+**Claude uses:** `memory_store`
+```json
+{
+  "label": "OAuth Implementation Discussion",
+  "folder": "/work/backend/auth",
+  "messages": [...],
+  "importance_score": 8
+}
+```
 
-**User:** "Great! Let's continue based on those discussions."
+**Later...**
 
-**Claude uses:** `memory_get_context`  
-**Query:** `"continue authentication feature based on past discussions"`  
-**Result:** Claude loads 4,000 tokens of relevant context.
+**User:** _"What did we decide about OAuth?"_
 
-**User:** "Perfect. Store this conversation as we make progress."
+**Claude uses:** `memory_search`
+```json
+{
+  "query": "OAuth implementation decisions",
+  "filters": {"folder": "/work"},
+  "limit": 5
+}
+```
 
-**Claude uses:** `memory_store`  
-**Label:** `"Authentication Feature - Planning Session"`  
-**Folder:** `"/work/backend/auth"`
-
----
-
-### Workflow 2: Knowledge Organization
-
-**User:** "What's the status of my stored conversations?"
-
-**Claude uses:** `memory_stats`  
-**Result:** Shows 247 conversations, 45MB storage.
-
-**User:** "I should clean up old stuff. What can I delete?"
-
-**Claude uses:** `memory_prune_suggest`  
-**Threshold:** 90 days, importance ≤ 3  
-**Result:** 8 candidates for archiving, would save 24MB.
-
-**User:** "Archive those conversations."
-
-**Claude uses:** `memory_create_label` (bulk operation)  
-**Action:** Moves 8 conversations to `/archive/2025`
+Claude retrieves the stored conversation and references the decisions.
 
 ---
 
-### Workflow 3: Research Assistant
+### Workflow 2: Memory Organization
 
-**User:** "I'm writing a paper on AI memory systems. Search everything we've discussed."
+**User:** _"How many conversations do I have in my work folder?"_
 
-**Claude uses:** `memory_query`  
-**Query:** `"AI memory systems architecture discussions"`  
-**Result:** 12 relevant conversations found.
+**Claude uses:** `memory_stats`
+```json
+{"folder": "/work"}
+```
 
-**User:** "Export those as markdown for my notes."
+**User:** _"What can I clean up?"_
 
-**Claude uses:** `memory_export`  
-**Format:** `markdown`  
-**Filters:** Based on query results  
-**Result:** Download link with 12 conversations in markdown.
+**Claude uses:** `memory_prune`
+```json
+{
+  "threshold_days": 90,
+  "importance_threshold": 4.0
+}
+```
+
+**User:** _"Archive those 8 old conversations"_
+
+**Claude uses:** `memory_update` (for each)
+```json
+{
+  "conversation_id": "...",
+  "folder": "/archive/2025",
+  "status": "archived"
+}
+```
+
+---
+
+### Workflow 3: Data Export
+
+**User:** _"Export my January work conversations as markdown"_
+
+**Claude:**
+1. Uses `memory_search` to find January conversations in `/work`
+2. For each result, uses `memory_export` with `format: "markdown"`
+3. Combines exports into a single document
 
 ---
 
 ## Troubleshooting
 
-### Claude can't see Sekha tools
+### Claude Can't See Sekha Tools
 
 **Check:**
 
-1. Claude Desktop config file is valid JSON
-2. Docker is running (`docker ps`)
-3. Sekha Controller is running (`curl http://localhost:8080/health`)
-4. Restart Claude Desktop after config changes
+1. ✅ Claude Desktop config file is valid JSON (use a JSON validator)
+2. ✅ Docker is running: `docker ps`
+3. ✅ Sekha Controller is running: `curl http://localhost:8080/health`
+4. ✅ Restart Claude Desktop after config changes
 
-### Tools return errors
+### Tools Return Errors
 
-**Common causes:**
+**Common Issues:**
 
-- **401 Unauthorized:** Wrong API key in config
-- **Connection refused:** Sekha Controller not running
-- **Timeout:** Increase Docker timeout in config
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `401 Unauthorized` | Wrong API key | Check `SEKHA_API_KEY` in config |
+| `Connection refused` | Controller not running | Start Sekha: `docker compose up -d` |
+| `Timeout` | Slow response | Increase Docker timeout in config |
+| `404 Not Found` | Wrong conversation ID | Verify ID with `memory_search` |
 
-**Debug:**
+**Debug MCP Server:**
 
 ```bash
-# Test MCP server manually
+# Test manually
 docker run -i --rm --network=host \
   -e SEKHA_API_URL=http://localhost:8080 \
   -e SEKHA_API_KEY=your-key \
   ghcr.io/sekha-ai/sekha-mcp:latest
+
+# Check logs
+docker logs sekha-mcp
 ```
 
-### Performance is slow
+### Performance is Slow
 
-**Optimize:**
+**Optimization Tips:**
 
-- Reduce `context_budget` (default: 4000 → try 2000)
-- Use `limit` parameter in queries (default: 10 → try 5)
-- Prune old conversations
-- Index your database (`VACUUM` in SQLite)
+- Reduce `limit` in searches (10 → 5)
+- Use specific `filters` to narrow results
+- Prune old conversations with `memory_prune`
+- Run `VACUUM` on SQLite database
 
 ---
 
-## Advanced Configuration
+## Security Best Practices
 
-### Custom API URL
+### API Key Protection
 
-If Sekha is running on a different host:
+Your API key is stored in Claude's config as **plain text**. Protect it:
+
+```bash
+# macOS/Linux - restrict file permissions
+chmod 600 ~/Library/Application\ Support/Claude/claude_desktop_config.json
+
+# Or use environment variables (more secure)
+export SEKHA_API_KEY="your-secure-key-here"
+```
+
+Then configure without embedding the key:
 
 ```json
 {
@@ -491,36 +621,54 @@ If Sekha is running on a different host:
     "sekha": {
       "command": "docker",
       "args": [
-        "run", "-i", "--rm",
-        "-e", "SEKHA_API_URL=http://192.168.1.100:8080",
-        "-e", "SEKHA_API_KEY=your-key",
+        "run", "-i", "--rm", "--network=host",
+        "-e", "SEKHA_API_URL=http://localhost:8080",
         "ghcr.io/sekha-ai/sekha-mcp:latest"
-      ]
+      ],
+      "env": {
+        "SEKHA_API_KEY": "${SEKHA_API_KEY}"
+      }
     }
   }
 }
 ```
 
+### Network Security
+
+For production:
+
+- ✅ Use HTTPS: `SEKHA_API_URL=https://sekha.yourcompany.com`
+- ✅ Enable firewall rules
+- ✅ Use VPN for remote access
+- ✅ Rotate API keys regularly
+- ✅ Monitor access logs
+
+---
+
+## Advanced Configuration
+
 ### Multiple Sekha Instances
+
+Manage separate work and personal memories:
 
 ```json
 {
   "mcpServers": {
+    "sekha-work": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm", "--network=host",
+        "-e", "SEKHA_API_URL=http://localhost:8080",
+        "-e", "SEKHA_API_KEY=work-key",
+        "ghcr.io/sekha-ai/sekha-mcp:latest"
+      ]
+    },
     "sekha-personal": {
       "command": "docker",
       "args": [
         "run", "-i", "--rm",
-        "-e", "SEKHA_API_URL=http://localhost:8080",
+        "-e", "SEKHA_API_URL=http://personal-server:8080",
         "-e", "SEKHA_API_KEY=personal-key",
-        "ghcr.io/sekha-ai/sekha-mcp:latest"
-      ]
-    },
-    "sekha-work": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-e", "SEKHA_API_URL=http://work-server:8080",
-        "-e", "SEKHA_API_KEY=work-key",
         "ghcr.io/sekha-ai/sekha-mcp:latest"
       ]
     }
@@ -530,56 +678,62 @@ If Sekha is running on a different host:
 
 Claude will show both as separate tool sets.
 
----
+### Remote Sekha Server
 
-## Security Considerations
+Connect to Sekha running on another machine:
 
-### API Key Storage
-
-Your API key is stored in Claude's config file in **plain text**. Protect it:
-
-```bash
-# macOS/Linux
-chmod 600 ~/Library/Application\ Support/Claude/claude_desktop_config.json
-
-# Or use environment variables (more secure)
-export SEKHA_API_KEY="your-key-here"
+```json
+{
+  "mcpServers": {
+    "sekha": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-e", "SEKHA_API_URL=https://sekha.company.com",
+        "-e", "SEKHA_API_KEY=prod-key",
+        "ghcr.io/sekha-ai/sekha-mcp:latest"
+      ]
+    }
+  }
+}
 ```
 
-Then omit `-e SEKHA_API_KEY=...` from config (MCP server will read from environment).
-
-### Network Security
-
-For production deployments:
-
-- Use HTTPS (`SEKHA_API_URL=https://sekha.yourcompany.com`)
-- Enable firewall rules
-- Consider VPN for remote access
-- Rotate API keys periodically
-
 ---
 
-## MCP Protocol Details
+## Protocol Details
 
 **Specification:** [Model Context Protocol](https://modelcontextprotocol.io)  
-**Sekha Implementation:** [sekha-mcp repository](https://github.com/sekha-ai/sekha-mcp)  
-**Protocol Version:** 1.0
+**Sekha Implementation:** [sekha-ai/sekha-mcp](https://github.com/sekha-ai/sekha-mcp)  
+**Protocol Version:** 1.0  
+**Controller Endpoints:** `POST /mcp/tools/{tool_name}`
 
 **Supported Clients:**
 
 - ✅ Claude Desktop (Anthropic)
 - ✅ Cline (VS Code extension)
-- 🔜 Other MCP-compatible AI tools
+- ✅ Any MCP 1.0 compatible client
+
+**Authentication:**
+
+All MCP tool requests require Bearer token authentication:
+
+```http
+POST /mcp/tools/memory_search
+Authorization: Bearer your-api-key-here
+Content-Type: application/json
+
+{"query": "test"}
+```
 
 ---
 
 ## Related Documentation
 
-- **Claude Desktop Setup:** [Full Integration Guide](../integrations/claude-desktop.md)
-- **REST API:** [REST API Reference](rest-api.md) (direct API access)
-- **Python SDK:** [Python SDK](../sdks/python-sdk.md) (programmatic access)
-- **Troubleshooting:** [FAQ](../troubleshooting/faq.md)
+- **[Claude Desktop Integration Guide](../integrations/claude-desktop.md)** - Complete setup walkthrough
+- **[REST API Reference](rest-api.md)** - Direct API access (without MCP)
+- **[Architecture Overview](../architecture/overview.md)** - How MCP tools work internally
+- **[Troubleshooting](../troubleshooting/faq.md)** - Common issues and solutions
 
 ---
 
-*Last updated: January 2026 - MCP Protocol v1.0*
+*Documentation updated: January 2026 | Based on sekha-controller v1.0*

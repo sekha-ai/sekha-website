@@ -104,6 +104,7 @@ This documentation aggregates content from:
 
 - [sekha-controller](https://github.com/sekha-ai/sekha-controller) - Core engine
 - [sekha-docker](https://github.com/sekha-ai/sekha-docker) - Deployment
+- [sekha-proxy](https://github.com/sekha-ai/sekha-proxy) - Transparent capture proxy
 - [sekha-llm-bridge](https://github.com/sekha-ai/sekha-llm-bridge) - LLM operations
 - [sekha-python-sdk](https://github.com/sekha-ai/sekha-python-sdk) - Python client
 - [sekha-js-sdk](https://github.com/sekha-ai/sekha-js-sdk) - JavaScript client
@@ -111,7 +112,6 @@ This documentation aggregates content from:
 - [sekha-cli](https://github.com/sekha-ai/sekha-cli) - CLI tool
 - [sekha-vscode](https://github.com/sekha-ai/sekha-vscode) - VS Code extension
 - [sekha-obsidian](https://github.com/sekha-ai/sekha-obsidian) - Obsidian plugin
-- [sekha-proxy](https://github.com/sekha-ai/sekha-proxy) - Context injection
 - [sekha-roadmap](https://github.com/sekha-ai/sekha-roadmap) - Project roadmap
 
 ## 🤖 Automated Deployment
@@ -127,7 +127,7 @@ AGPL-3.0 - See [LICENSE](LICENSE) for details.
 ## 🆘 Support
 
 - **Issues**: [GitHub Issues](https://github.com/sekha-ai/sekha-website/issues)
-- **Discord**: [Join Community](https://discord.gg/7RUTmdd2)
+- **Discord**: [Join Community](https://discord.gg/gZb7U9deKH))
 - **Email**: hello@sekha.dev
 
 ---

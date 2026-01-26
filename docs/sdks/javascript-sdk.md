@@ -982,8 +982,7 @@ await client.conversations.updateLabel(id, { label: 'New' });
 
 - **[Python SDK](python-sdk.md)** - Python client library
 - **[REST API](../api-reference/rest-api.md)** - Full API reference
-- **[Examples](examples.md)** - More code examples
-- **[Integration Guides](../integrations/)** - Use with React, Vue, etc.
+- **[Integrations](../integrations/index.md)** - Use with React, Vue, etc.
 
 ---
 

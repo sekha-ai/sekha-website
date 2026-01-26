@@ -743,8 +743,7 @@ black --check sekha/
 
 - **[JavaScript SDK](javascript-sdk.md)** - Node.js and browser client
 - **[REST API](../api-reference/rest-api.md)** - Full API reference
-- **[Examples](examples.md)** - More code examples
-- **[Integration Guides](../integrations/)** - Use with VS Code, Claude, etc.
+- **[Integrations](../integrations/index.md)** - Use with VS Code, Claude, etc.
 
 ---
 

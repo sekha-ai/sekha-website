@@ -43,17 +43,26 @@ uv pip install -e .
 
 ### Step 2: Get Your API Key
 
-Your Sekha API key is in `~/.sekha/config.toml`:
+Your Sekha MCP API key is configured in the docker `.env` file or config:
 
 ```bash
-cat ~/.sekha/config.toml | grep api_key
+# Check docker .env file
+cat sekha-docker/docker/.env | grep MCP_API_KEY
+
+# Or check config.toml
+cat ~/.sekha/config.toml | grep mcp_api_key
 ```
 
 Look for:
 
+```env
+MCP_API_KEY=your-api-key-here
+```
+
+Or:
+
 ```toml
-[server]
-api_key = "your-api-key-here"
+mcp_api_key = "your-api-key-here"
 ```
 
 !!! warning "Security Note"
@@ -79,7 +88,7 @@ Add the Sekha MCP server:
       "args": ["/absolute/path/to/sekha-mcp/main.py"],
       "env": {
         "CONTROLLER_URL": "http://localhost:8080",
-        "CONTROLLER_API_KEY": "your-api-key-here"
+        "CONTROLLER_API_KEY": "your-mcp-api-key-here"
       }
     }
   }
@@ -285,12 +294,14 @@ Look for MCP connection errors.
 
 1. Check your controller's API key:
    ```bash
-   cat ~/.sekha/config.toml | grep api_key
+   cat sekha-docker/docker/.env | grep MCP_API_KEY
+   # Or
+   cat ~/.sekha/config.toml | grep mcp_api_key
    ```
 
 2. Update Claude Desktop config to match:
    ```json
-   "CONTROLLER_API_KEY": "exact-key-from-config-toml"
+   "CONTROLLER_API_KEY": "exact-key-from-config"
    ```
 
 3. Restart Claude Desktop
@@ -308,11 +319,11 @@ Look for MCP connection errors.
 curl http://localhost:8080/health
 
 # If using Docker, check all services
-cd sekha-docker
-docker compose -f docker-compose.prod.yml ps
+cd sekha-docker/docker
+docker compose -f docker-compose.yml -f docker-compose.full.yml ps
 
 # Restart if needed
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.full.yml up -d
 ```
 
 ---
@@ -328,7 +339,7 @@ docker compose -f docker-compose.prod.yml up -d
 curl http://localhost:11434/api/tags
 
 # Pull embedding model if missing
-docker exec ollama ollama pull nomic-embed-text
+ollama pull nomic-embed-text:latest
 ```
 
 **Expected performance:**

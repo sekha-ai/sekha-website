@@ -1,691 +1,994 @@
 # JavaScript/TypeScript SDK
 
-Official JavaScript/TypeScript SDK for Sekha AI Memory Controller - Persistent context management for AI applications.
+Official JavaScript and TypeScript client library for Sekha Controller.
+
+## Overview
+
+The Sekha JavaScript SDK provides:
+
+- ✅ **Full REST API coverage** - All 19 endpoints
+- ✅ **TypeScript support** - Complete type definitions
+- ✅ **Node.js & Browser** - Works in both environments
+- ✅ **Promise-based** - Modern async/await API
+- ✅ **Automatic retries** - Exponential backoff
+- ✅ **Error handling** - Rich error types
+- ✅ **Tree-shakeable** - Import only what you need
+
+**Status:** Beta - Ready for testing
+
+---
 
 ## Installation
+
+### npm
 
 ```bash
 npm install @sekha/sdk
 ```
 
-**Using Yarn:**
+### yarn
+
 ```bash
 yarn add @sekha/sdk
 ```
 
-**Using pnpm:**
+### pnpm
+
 ```bash
 pnpm add @sekha/sdk
 ```
 
-!!! info "Package Status"
-    Currently in beta. Package will be published to npm as `@sekha/sdk` soon.
-    For now, use from source:
-    ```bash
-    git clone https://github.com/sekha-ai/sekha-js-sdk.git
-    cd sekha-js-sdk
-    npm install
-    npm run build
-    ```
+### From Source
 
----
-
-## Features
-
-- ✅ **Full TypeScript Support** - Complete type definitions for all API operations
-- ✅ **Tree-Shakeable** - ESM and CJS builds for optimal bundle size
-- ✅ **Zero Dependencies** - Built on native `fetch` API
-- ✅ **AbortController Support** - Cancel requests and handle timeouts
-- ✅ **Streaming Exports** - Efficiently export large datasets
-- ✅ **Rate Limiting** - Built-in client-side throttling
-- ✅ **Automatic Retries** - Exponential backoff for transient failures
-- ✅ **Comprehensive Errors** - Typed error classes for all scenarios
+```bash
+git clone https://github.com/sekha-ai/sekha-js-sdk.git
+cd sekha-js-sdk
+npm install
+npm run build
+```
 
 ---
 
 ## Quick Start
 
+### Node.js
+
 ```typescript
-import { MemoryController } from '@sekha/sdk';
+import { SekhaClient } from '@sekha/sdk';
 
-// Initialize the client
-const memory = new MemoryController({
-  apiKey: process.env.SEKHA_API_KEY!, // or 'your-api-key'
-  baseURL: 'http://localhost:8080',
-  timeout: 30000, // optional
-  maxRetries: 3, // optional
+// Initialize
+const client = new SekhaClient({
+  baseUrl: 'http://localhost:8080',
+  apiKey: 'your-rest-api-key-here'
 });
 
-// Store a conversation
-const conversation = await memory.store({
+// Create conversation
+const conversation = await client.conversations.create({
+  label: 'My First Conversation',
+  folder: '/work/projects',
   messages: [
-    { role: 'user', content: 'What are token limits in GPT-4?' },
-    { role: 'assistant', content: 'GPT-4 has a context window of...' }
-  ],
-  label: 'AI:Token Limits',
-  folder: '/research/2025',
-  importanceScore: 8
+    { role: 'user', content: 'What is RAG?' },
+    { role: 'assistant', content: 'RAG stands for...' }
+  ]
 });
 
-console.log(`✅ Stored conversation: ${conversation.id}`);
+console.log(`Created: ${conversation.id}`);
 
-// Query with semantic search
-const results = await memory.query('token limits', {
-  limit: 10,
-  labels: ['AI']
+// Search semantically
+const results = await client.query({
+  query: 'retrieval augmented generation',
+  limit: 5
 });
 
 results.forEach(result => {
-  console.log(`${result.label}: ${result.similarity.toFixed(2)}`);
+  console.log(`${result.label}: ${result.score.toFixed(2)}`);
 });
+```
+
+### Browser
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module">
+    import { SekhaClient } from 'https://esm.sh/@sekha/sdk';
+    
+    const client = new SekhaClient({
+      baseUrl: 'http://localhost:8080',
+      apiKey: 'your-key'
+    });
+    
+    const results = await client.query({ query: 'test' });
+    console.log(results);
+  </script>
+</head>
+</html>
+```
+
+### CommonJS
+
+```javascript
+const { SekhaClient } = require('@sekha/sdk');
+
+const client = new SekhaClient({
+  baseUrl: 'http://localhost:8080',
+  apiKey: 'your-key'
+});
+
+// All methods return Promises
+client.query({ query: 'test' })
+  .then(results => console.log(results))
+  .catch(err => console.error(err));
 ```
 
 ---
 
 ## API Reference
 
-### Constructor
+### Client Initialization
 
 ```typescript
-const memory = new MemoryController({
-  apiKey: string;          // Required: API key for authentication
-  baseURL: string;         // Required: Sekha Controller URL
-  timeout?: number;        // Optional: Request timeout (default: 30000ms)
-  maxRetries?: number;     // Optional: Max retry attempts (default: 3)
-  rateLimit?: number;      // Optional: Requests per minute (default: 1000)
+import { SekhaClient } from '@sekha/sdk';
+
+const client = new SekhaClient({
+  baseUrl: 'http://localhost:8080',  // Required
+  apiKey: 'your-api-key',             // Required
+  timeout: 30000,                     // Request timeout (ms)
+  maxRetries: 3,                      // Retry failed requests
+  retryDelay: 1000,                   // Initial retry delay (ms)
+  headers: {}                         // Additional headers
 });
 ```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `baseUrl` | string | **required** | Sekha Controller URL |
+| `apiKey` | string | **required** | REST API key (min 32 chars) |
+| `timeout` | number | `30000` | Request timeout in milliseconds |
+| `maxRetries` | number | `3` | Number of retries for failed requests |
+| `retryDelay` | number | `1000` | Initial retry delay (exponential backoff) |
+| `headers` | object | `{}` | Additional HTTP headers |
 
 ---
 
-## Core Operations
+### Conversations
 
-### store() / create()
-
-Store a new conversation with messages.
+#### Create Conversation
 
 ```typescript
-const conv = await memory.store({
-  messages: Message[],
-  label: string,
-  folder?: string,
-  importanceScore?: number,
-  metadata?: Record<string, any>
+const conversation = await client.conversations.create({
+  label: 'API Design Discussion',
+  folder: '/work/engineering',
+  importanceScore: 8,
+  messages: [
+    {
+      role: 'user',
+      content: 'How should we design the REST API?'
+    },
+    {
+      role: 'assistant',
+      content: 'Consider RESTful principles...'
+    }
+  ]
 });
+
+console.log(conversation.id);          // UUID
+console.log(conversation.label);       // "API Design Discussion"
+console.log(conversation.createdAt);   // Date object
 ```
 
-**Parameters:**
+**Type:**
 
 ```typescript
+interface CreateConversationRequest {
+  label: string;
+  folder?: string;
+  importanceScore?: number;  // 1-10
+  messages: Message[];
+}
+
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
-  timestamp?: string;
+  metadata?: Record<string, any>;
+}
+
+interface Conversation {
+  id: string;              // UUID
+  label: string;
+  folder: string;
+  status: 'active' | 'archived';
+  messageCount: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 
-**Returns:** `Promise<Conversation>`
+---
 
-**Example:**
+#### Get Conversation
 
 ```typescript
-const conversation = await memory.store({
-  messages: [
-    { role: 'user', content: 'How do I implement authentication?' },
-    { role: 'assistant', content: 'Here are the best practices...' }
-  ],
-  label: 'Authentication Implementation',
-  folder: '/work/security',
-  importanceScore: 8,
-  metadata: {
-    project: 'SecureApp',
-    sprint: 'Q1-2026'
+const conversation = await client.conversations.get(
+  '550e8400-e29b-41d4-a716-446655440000'
+);
+
+console.log(conversation.label);
+console.log(conversation.messageCount);
+```
+
+---
+
+#### List Conversations
+
+```typescript
+const response = await client.conversations.list({
+  folder: '/work',
+  pinned: true,
+  archived: false,
+  page: 1,
+  pageSize: 50
+});
+
+console.log(`Total: ${response.total}`);
+response.results.forEach(conv => {
+  console.log(`${conv.label} - ${conv.folder}`);
+});
+```
+
+**Parameters:**
+
+```typescript
+interface ListConversationsParams {
+  label?: string;
+  folder?: string;
+  pinned?: boolean;
+  archived?: boolean;
+  page?: number;        // Default: 1
+  pageSize?: number;    // Default: 50, Max: 100
+}
+
+interface ListConversationsResponse {
+  results: Conversation[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+```
+
+---
+
+#### Update Label/Folder
+
+```typescript
+// Update label and folder
+await client.conversations.updateLabel(conversationId, {
+  label: 'Updated Label',
+  folder: '/new/folder'
+});
+
+// Update folder only
+await client.conversations.updateFolder(
+  conversationId,
+  '/work/archived'
+);
+```
+
+---
+
+#### Pin/Archive
+
+```typescript
+// Pin (sets importance to 10)
+await client.conversations.pin(conversationId);
+
+// Unpin
+await client.conversations.unpin(conversationId);
+
+// Archive
+await client.conversations.archive(conversationId);
+
+// Unarchive
+await client.conversations.unarchive(conversationId);
+```
+
+---
+
+#### Delete Conversation
+
+```typescript
+await client.conversations.delete(conversationId);
+```
+
+---
+
+#### Count Conversations
+
+```typescript
+// Count all
+const total = await client.conversations.count();
+
+// Count by label
+const count = await client.conversations.count({ label: 'API Design' });
+
+// Count by folder
+const count = await client.conversations.count({ folder: '/work/engineering' });
+```
+
+---
+
+### Search & Query
+
+#### Semantic Query
+
+```typescript
+const results = await client.query({
+  query: 'How to implement authentication?',
+  limit: 10,
+  filters: {
+    folder: '/work/engineering',
+    importanceMin: 7,
+    dateFrom: '2026-01-01T00:00:00Z'
   }
 });
 
-console.log(`Stored: ${conversation.id}`);
+results.forEach(result => {
+  console.log(`[${result.score.toFixed(2)}] ${result.label}`);
+  console.log(`  Folder: ${result.folder}`);
+  console.log(`  Content: ${result.content.substring(0, 100)}...`);
+});
+```
+
+**Type:**
+
+```typescript
+interface QueryRequest {
+  query: string;
+  limit?: number;       // Default: 10
+  offset?: number;      // Default: 0
+  filters?: QueryFilters;
+}
+
+interface QueryFilters {
+  folder?: string;
+  label?: string;
+  importanceMin?: number;
+  importanceMax?: number;
+  dateFrom?: string;    // ISO 8601
+  dateTo?: string;      // ISO 8601
+}
+
+interface SearchResult {
+  conversationId: string;
+  messageId: string;
+  score: number;        // 0-1
+  content: string;
+  label: string;
+  folder: string;
+  timestamp: Date;
+  metadata?: Record<string, any>;
+}
 ```
 
 ---
 
-### query() / search()
-
-Search conversations using semantic similarity.
+#### Full-Text Search
 
 ```typescript
-const results = await memory.query('API design patterns', {
-  limit: 10,
-  labels: ['Engineering', 'Architecture']
-});
-```
-
-**Parameters:**
-
-```typescript
-interface QueryOptions {
-  limit?: number;          // Max results (default: 10)
-  labels?: string[];       // Filter by labels
-}
-```
-
-**Returns:** `Promise<SearchResult[]>`
-
-**Example:**
-
-```typescript
-const results = await memory.search('database optimization', {
-  limit: 5,
-  labels: ['Engineering']
+const results = await client.search.fulltext({
+  query: 'authentication oauth jwt',
+  limit: 20
 });
 
 results.forEach(result => {
-  console.log(`${result.label} (${(result.similarity * 100).toFixed(0)}% match)`);
-  console.log(`  ${result.content.substring(0, 100)}...`);
+  console.log(result.content);
 });
 ```
 
 ---
 
-### get() / getConversation()
-
-Retrieve a specific conversation by ID.
+### Context Assembly
 
 ```typescript
-const conv = await memory.get('conversation-uuid');
+const context = await client.context.assemble({
+  query: 'Continue our API design discussion',
+  preferredLabels: ['API Design', 'Architecture'],
+  contextBudget: 8000,  // Max tokens
+  excludedFolders: ['/personal']
+});
+
+// Use in LLM prompt
+const messages = [
+  { role: 'system', content: 'You are a helpful assistant.' },
+  ...context,  // Insert assembled context
+  { role: 'user', content: 'What should we do next?' }
+];
 ```
 
-**Returns:** `Promise<Conversation>`
-
-**Example:**
-
-```typescript
-const conversation = await memory.get('123e4567-e89b-12d3-a456-426614174000');
-
-console.log(`Label: ${conversation.label}`);
-console.log(`Messages: ${conversation.messages.length}`);
-console.log(`Importance: ${conversation.importanceScore}/10`);
-```
+**Returns:** `Message[]` ready for LLM input
 
 ---
 
-### list() / listConversations()
-
-List conversations with optional filters.
+### Summarization
 
 ```typescript
-const convs = await memory.list({
-  label: 'Engineering',
-  status: 'active',
-  limit: 50,
-  offset: 0
+// Daily summary
+const summary = await client.summarize({
+  conversationId,
+  level: 'daily'
+});
+
+console.log(summary.summary);
+console.log(summary.generatedAt);
+
+// Weekly summary
+const weeklySummary = await client.summarize({
+  conversationId,
+  level: 'weekly'
+});
+
+// Monthly summary
+const monthlySummary = await client.summarize({
+  conversationId,
+  level: 'monthly'
 });
 ```
 
-**Parameters:**
+**Levels:** `'daily'`, `'weekly'`, `'monthly'`
+
+---
+
+### Pruning
+
+#### Dry Run
 
 ```typescript
-interface ListOptions {
-  label?: string;
-  status?: 'active' | 'archived' | 'pinned';
-  limit?: number;
-  offset?: number;
+const suggestions = await client.prune.dryRun({
+  thresholdDays: 90
+});
+
+console.log(`Found ${suggestions.total} candidates for pruning`);
+
+suggestions.suggestions.forEach(suggestion => {
+  console.log(suggestion.conversationLabel);
+  console.log(`  Last accessed: ${suggestion.lastAccessed}`);
+  console.log(`  Importance: ${suggestion.importanceScore}`);
+  console.log(`  Recommendation: ${suggestion.recommendation}`);
+});
+```
+
+**Type:**
+
+```typescript
+interface PruningSuggestion {
+  conversationId: string;
+  conversationLabel: string;
+  lastAccessed: Date;
+  messageCount: number;
+  tokenEstimate: number;
+  importanceScore: number;
+  preview: string;
+  recommendation: 'DELETE' | 'ARCHIVE';
 }
-```
 
-**Returns:** `Promise<Conversation[]>`
-
----
-
-### update()
-
-Update conversation metadata.
-
-```typescript
-await memory.update('conversation-uuid', {
-  label: 'New Label',
-  folder: '/new/folder',
-  importanceScore: 9,
-  status: 'archived'
-});
-```
-
-**Returns:** `Promise<Conversation>`
-
----
-
-### updateLabel()
-
-Update conversation label and optionally folder.
-
-```typescript
-await memory.updateLabel('conversation-uuid', 'Updated Label', '/new/folder');
-```
-
-**Returns:** `Promise<void>`
-
----
-
-### delete()
-
-Permanently delete a conversation.
-
-```typescript
-await memory.delete('conversation-uuid');
-```
-
-**Returns:** `Promise<void>`
-
-!!! danger "Permanent Deletion"
-    This cannot be undone. Consider archiving instead.
-
----
-
-## Advanced Operations
-
-### pin()
-
-Pin a conversation (prevents auto-pruning).
-
-```typescript
-await memory.pin('conversation-uuid');
-```
-
-**Example:**
-
-```typescript
-// Pin critical conversations
-const criticalConvs = await memory.list({ label: 'Critical Decision' });
-for (const conv of criticalConvs) {
-  await memory.pin(conv.id);
+interface PruneResponse {
+  suggestions: PruningSuggestion[];
+  total: number;
 }
 ```
 
 ---
 
-### archive()
-
-Archive a conversation.
+#### Execute Pruning
 
 ```typescript
-await memory.archive('conversation-uuid');
+// Archive low-priority conversations
+const toArchive = suggestions.suggestions
+  .filter(s => s.importanceScore <= 3)
+  .map(s => s.conversationId);
+
+await client.prune.execute(toArchive);
 ```
 
 ---
 
-### getPruningSuggestions()
-
-Get AI-powered pruning suggestions based on age and importance.
+### Label Suggestions
 
 ```typescript
-const suggestions = await memory.getPruningSuggestions(60, 5.0);
+const suggestions = await client.labels.suggest({
+  conversationId
+});
 
-suggestions.forEach(s => {
-  console.log(`Can prune: ${s.label}`);
-  console.log(`  Age: ${s.ageDays} days, Importance: ${s.importanceScore}/10`);
-  console.log(`  Reason: ${s.reason}`);
+suggestions.forEach(suggestion => {
+  console.log(`${suggestion.label} (${(suggestion.confidence * 100).toFixed(0)}%)`);
+  console.log(`  Reason: ${suggestion.reason}`);
+  console.log(`  Existing: ${suggestion.isExisting}`);
 });
 ```
 
-**Parameters:**
-- `thresholdDays` - Age threshold in days (default: 30)
-- `importanceThreshold` - Minimum importance to keep (default: 5.0)
-
-**Returns:** `Promise<PruningSuggestion[]>`
-
 ---
 
-### suggestLabels()
-
-Get AI-powered label suggestions for a conversation.
+### Rebuild Embeddings
 
 ```typescript
-const suggestions = await memory.suggestLabels('conversation-uuid');
+// Trigger async rebuild
+await client.embeddings.rebuild();
 
-suggestions.forEach(s => {
-  console.log(`${s.label} (confidence: ${s.confidence.toFixed(2)})`);
-});
-```
-
-**Returns:** `Promise<LabelSuggestion[]>`
-
----
-
-### autoLabel()
-
-Automatically apply the best label if AI confidence exceeds threshold.
-
-```typescript
-const appliedLabel = await memory.autoLabel('conversation-uuid', 0.8);
-
-if (appliedLabel) {
-  console.log(`Applied label: ${appliedLabel}`);
-} else {
-  console.log('No label met confidence threshold');
-}
-```
-
-**Returns:** `Promise<string | null>`
-
----
-
-### assembleContext()
-
-Assemble context for LLM with token budget management.
-
-```typescript
-const context = await memory.assembleContext({
-  query: 'API design decisions',
-  tokenBudget: 8000,
-  labels: ['Engineering', 'Architecture']
-});
-
-console.log(`Context: ${context.formattedContext}`);
-console.log(`Estimated tokens: ${context.estimatedTokens}`);
-```
-
-**Returns:** `Promise<ContextAssembly>`
-
----
-
-### export()
-
-Export conversations to Markdown or JSON.
-
-```typescript
-// Export all conversations as Markdown
-const markdown = await memory.export({ format: 'markdown' });
-
-// Export specific label as JSON
-const json = await memory.export({
-  label: 'Project:AI',
-  format: 'json'
-});
-```
-
-**Returns:** `Promise<string>`
-
----
-
-### exportStream()
-
-Stream large exports to avoid memory issues.
-
-```typescript
-const stream = memory.exportStream({
-  label: 'Project:AI',
-  format: 'markdown'
-});
-
-for await (const chunk of stream) {
-  process.stdout.write(chunk);
-}
-```
-
-**Returns:** `AsyncIterable<string>`
-
-**Example with file writing:**
-
-```typescript
-import { createWriteStream } from 'fs';
-
-const stream = memory.exportStream({
-  label: 'Engineering',
-  format: 'markdown'
-});
-
-const writeStream = createWriteStream('./engineering-export.md');
-
-for await (const chunk of stream) {
-  writeStream.write(chunk);
-}
-
-writeStream.end();
-console.log('Export complete!');
+console.log('Embedding rebuild started (async)');
 ```
 
 ---
 
-### health()
-
-Check Sekha Controller health status.
+### Health & Stats
 
 ```typescript
-const status = await memory.health();
+// Health check
+const health = await client.health();
+console.log(health.status);  // 'healthy' or 'unhealthy'
+console.log(health.checks.database);
+console.log(health.checks.chroma);
 
-console.log(`Status: ${status.status}`);
-console.log(`Database OK: ${status.databaseOk}`);
-console.log(`Vector DB OK: ${status.vectorDbOk}`);
+// Metrics (Prometheus format)
+const metrics = await client.metrics();
+console.log(metrics);  // Raw Prometheus text
 ```
-
-**Returns:** `Promise<HealthStatus>`
 
 ---
 
 ## Error Handling
 
-The SDK provides typed error classes for all failure scenarios:
-
 ```typescript
 import {
   SekhaError,
-  SekhaAuthError,
-  SekhaNotFoundError,
-  SekhaValidationError,
-  SekhaAPIError,
-  SekhaConnectionError
+  AuthenticationError,
+  NotFoundError,
+  ValidationError,
+  RateLimitError,
+  ServerError
 } from '@sekha/sdk';
 
 try {
-  await memory.get('invalid-id');
+  const conversation = await client.conversations.get(conversationId);
 } catch (error) {
-  if (error instanceof SekhaNotFoundError) {
-    console.log('Conversation not found');
-  } else if (error instanceof SekhaAuthError) {
-    console.log('Invalid API key');
-  } else if (error instanceof SekhaValidationError) {
-    console.log('Validation error:', error.details);
-  } else if (error instanceof SekhaConnectionError) {
-    console.log('Network error:', error.message);
-  } else if (error instanceof SekhaAPIError) {
-    console.log(`API error (${error.statusCode}):`, error.message);
+  if (error instanceof NotFoundError) {
+    console.error('Conversation not found');
+  } else if (error instanceof AuthenticationError) {
+    console.error('Invalid API key');
+  } else if (error instanceof RateLimitError) {
+    console.error(`Rate limited. Retry after ${error.retryAfter}s`);
+  } else if (error instanceof ServerError) {
+    console.error(`Server error: ${error.message}`);
+  } else if (error instanceof SekhaError) {
+    console.error(`Unknown error: ${error.message}`);
+  } else {
+    throw error;
   }
 }
 ```
 
+**Exception hierarchy:**
+
+```
+SekhaError (base)
+├── ClientError (4xx)
+│   ├── AuthenticationError (401)
+│   ├── NotFoundError (404)
+│   ├── ValidationError (400)
+│   └── RateLimitError (429)
+└── ServerError (5xx)
+```
+
 ---
 
-## AbortController Support
+## TypeScript Support
 
-Cancel requests or implement timeouts:
+### Full Type Definitions
 
 ```typescript
-const controller = new AbortController();
-const timeout = setTimeout(() => controller.abort(), 5000);
+import type {
+  SekhaClient,
+  Conversation,
+  Message,
+  SearchResult,
+  QueryRequest,
+  QueryFilters,
+  PruningSuggestion,
+  SummaryLevel
+} from '@sekha/sdk';
 
-try {
-  const results = await memory.search('authentication', {
-    limit: 10,
-    signal: controller.signal
-  });
-  clearTimeout(timeout);
-  console.log('Search completed:', results);
-} catch (error) {
-  if (error.name === 'AbortError') {
-    console.log('Request was cancelled or timed out');
+// All types are exported and documented
+const query: QueryRequest = {
+  query: 'test',
+  limit: 10,
+  filters: {
+    folder: '/work',
+    importanceMin: 7
   }
-}
+};
+```
+
+### Generic Methods
+
+```typescript
+// Type-safe response
+const conversation: Conversation = await client.conversations.create({
+  label: 'Test',
+  messages: []
+});
+
+// Typed filters
+const results: SearchResult[] = await client.query({
+  query: 'test',
+  filters: {
+    importanceMin: 7  // TypeScript validates this is a number
+  }
+});
 ```
 
 ---
 
-## TypeScript Types
+## Advanced Usage
 
-Full TypeScript definitions are included:
+### Custom Timeout
 
 ```typescript
-interface Message {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp?: string;
-}
+// Per-client timeout
+const client = new SekhaClient({
+  baseUrl: 'http://localhost:8080',
+  apiKey: 'key',
+  timeout: 60000  // 60 seconds
+});
 
-interface Conversation {
-  id: string;
-  label: string;
-  folder?: string;
-  messages: Message[];
-  status: 'active' | 'archived' | 'pinned';
-  importanceScore?: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface SearchResult {
-  id: string;
-  conversationId: string;
-  label: string;
-  content: string;
-  score: number;
-  similarity: number;
-  importanceScore: number;
-}
-
-interface PruningSuggestion {
-  id: string;
-  label: string;
-  ageDays: number;
-  importanceScore: number;
-  reason: string;
-  lastAccessed: string;
-}
-
-interface LabelSuggestion {
-  label: string;
-  confidence: number;
-  reason: string;
-}
-
-interface ContextAssembly {
-  formattedContext: string;
-  estimatedTokens: number;
-  selectedConversations: Array<{
-    id: string;
-    label: string;
-    excerpt: string;
-    relevanceScore: number;
-    tokenCount: number;
-  }>;
-}
+// Per-request timeout (future)
+const results = await client.query({
+  query: 'slow query',
+  _timeout: 120000  // 120 seconds
+});
 ```
 
----
-
-## Configuration Options
+### Retry Configuration
 
 ```typescript
-interface MemoryConfig {
-  apiKey: string;           // Required: API key (32+ characters)
-  baseURL: string;          // Required: Sekha Controller URL
-  timeout?: number;         // Optional: Request timeout in ms (default: 30000)
-  maxRetries?: number;      // Optional: Max retry attempts (default: 3)
-  rateLimit?: number;       // Optional: Requests per minute (default: 1000)
-  defaultLabel?: string;    // Optional: Default label for conversations
-}
+const client = new SekhaClient({
+  baseUrl: 'http://localhost:8080',
+  apiKey: 'key',
+  maxRetries: 5,
+  retryDelay: 2000  // 2 seconds initial delay
+});
+```
+
+### Custom Headers
+
+```typescript
+const client = new SekhaClient({
+  baseUrl: 'http://localhost:8080',
+  apiKey: 'key',
+  headers: {
+    'X-Custom-Header': 'value',
+    'User-Agent': 'MyApp/1.0'
+  }
+});
+```
+
+### Axios Instance Access
+
+```typescript
+// Access underlying axios instance
+client._axios.interceptors.request.use(config => {
+  console.log(`Request: ${config.method} ${config.url}`);
+  return config;
+});
+
+client._axios.interceptors.response.use(response => {
+  console.log(`Response: ${response.status}`);
+  return response;
+});
 ```
 
 ---
 
 ## Examples
 
-### Build a Chat Interface
+### Store Daily Standup
 
 ```typescript
-import { MemoryController } from '@sekha/sdk';
+const standup = await client.conversations.create({
+  label: `Standup ${new Date().toISOString().split('T')[0]}`,
+  folder: '/work/meetings/standup',
+  importanceScore: 5,
+  messages: [
+    {
+      role: 'user',
+      content: `
+        Yesterday:
+        - Fixed authentication bug
+        - Reviewed PR #234
+        
+        Today:
+        - Implement rate limiting
+        - Update documentation
+        
+        Blockers:
+        - Waiting on database migration approval
+      `
+    }
+  ]
+});
+```
 
-class ChatApp {
-  private memory: MemoryController;
-  private currentSession: string;
-  private messages: Message[] = [];
+### Weekly Review
 
-  constructor() {
-    this.memory = new MemoryController({
-      apiKey: process.env.SEKHA_API_KEY!,
-      baseURL: 'http://localhost:8080'
-    });
-    this.currentSession = `session-${Date.now()}`;
+```typescript
+// Get last week's conversations
+const weekAgo = new Date();
+weekAgo.setDate(weekAgo.getDate() - 7);
+
+const results = await client.query({
+  query: 'important decisions and action items',
+  filters: {
+    dateFrom: weekAgo.toISOString(),
+    importanceMin: 7
   }
+});
 
-  async sendMessage(content: string): Promise<string> {
-    // Add user message
-    this.messages.push({ role: 'user', content });
+console.log(`Found ${results.length} important conversations`);
+results.forEach(result => {
+  console.log(`- ${result.label}`);
+});
+```
 
-    // Get relevant context from memory
-    const pastContext = await this.memory.query(content, { limit: 5 });
+### Backup Conversations
 
-    // Generate AI response (pseudo-code)
-    const aiResponse = await this.generateAIResponse(content, pastContext);
-    this.messages.push({ role: 'assistant', content: aiResponse });
+```typescript
+import * as fs from 'fs';
 
-    return aiResponse;
-  }
+// Export all conversations
+const conversations = await client.conversations.list({ pageSize: 100 });
 
-  async saveSession(label: string): Promise<void> {
-    await this.memory.store({
-      messages: this.messages,
-      label,
-      folder: '/sessions',
-      importanceScore: this.calculateImportance(this.messages)
-    });
-  }
-
-  private calculateImportance(messages: Message[]): number {
-    // Logic to determine conversation importance
-    const wordCount = messages.reduce((sum, m) => sum + m.content.split(' ').length, 0);
-    return Math.min(10, Math.floor(wordCount / 100) + 5);
-  }
+const backup = [];
+for (const conv of conversations.results) {
+  const fullConv = await client.conversations.get(conv.id);
+  backup.push({
+    id: fullConv.id,
+    label: fullConv.label,
+    folder: fullConv.folder,
+    createdAt: fullConv.createdAt
+  });
 }
+
+fs.writeFileSync('backup.json', JSON.stringify(backup, null, 2));
+```
+
+### React Integration
+
+```typescript
+import { useState, useEffect } from 'react';
+import { SekhaClient } from '@sekha/sdk';
+
+const client = new SekhaClient({
+  baseUrl: 'http://localhost:8080',
+  apiKey: process.env.SEKHA_API_KEY!
+});
+
+function SearchComponent() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      const searchResults = await client.query({ query, limit: 10 });
+      setResults(searchResults);
+    } catch (error) {
+      console.error('Search failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <input 
+        value={query} 
+        onChange={e => setQuery(e.target.value)}
+        placeholder="Search..."
+      />
+      <button onClick={handleSearch} disabled={loading}>
+        {loading ? 'Searching...' : 'Search'}
+      </button>
+      
+      <ul>
+        {results.map(result => (
+          <li key={result.messageId}>
+            <strong>{result.label}</strong> ({result.score.toFixed(2)})
+            <p>{result.content.substring(0, 200)}...</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+### Express.js API
+
+```typescript
+import express from 'express';
+import { SekhaClient } from '@sekha/sdk';
+
+const app = express();
+app.use(express.json());
+
+const sekha = new SekhaClient({
+  baseUrl: 'http://localhost:8080',
+  apiKey: process.env.SEKHA_API_KEY!
+});
+
+// Search endpoint
+app.post('/api/search', async (req, res) => {
+  try {
+    const { query } = req.body;
+    const results = await sekha.query({ query, limit: 10 });
+    res.json({ results });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Save conversation endpoint
+app.post('/api/conversations', async (req, res) => {
+  try {
+    const conversation = await sekha.conversations.create(req.body);
+    res.json({ conversation });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.listen(3000, () => {
+  console.log('Server running on http://localhost:3000');
+});
 ```
 
 ---
 
-### Memory-Aware Agent
+## Development
+
+### Building from Source
+
+```bash
+git clone https://github.com/sekha-ai/sekha-js-sdk.git
+cd sekha-js-sdk
+
+# Install dependencies
+npm install
+
+# Build
+npm run build
+
+# Build types
+npm run build:types
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# With coverage
+npm run test:coverage
+
+# Specific test
+npm test -- conversations.test.ts
+
+# Watch mode
+npm test -- --watch
+```
+
+### Type Checking
+
+```bash
+npm run type-check
+```
+
+### Linting
+
+```bash
+npm run lint
+npm run lint:fix
+```
+
+---
+
+## Browser Support
+
+### Module Formats
+
+- **ESM** - `dist/index.esm.js`
+- **CommonJS** - `dist/index.cjs.js`
+- **UMD** - `dist/index.umd.js`
+
+### CDN Usage
+
+```html
+<!-- Via esm.sh -->
+<script type="module">
+  import { SekhaClient } from 'https://esm.sh/@sekha/sdk@latest';
+</script>
+
+<!-- Via unpkg -->
+<script type="module">
+  import { SekhaClient } from 'https://unpkg.com/@sekha/sdk@latest/dist/index.esm.js';
+</script>
+
+<!-- UMD (global) -->
+<script src="https://unpkg.com/@sekha/sdk@latest/dist/index.umd.js"></script>
+<script>
+  const client = new Sekha.SekhaClient({
+    baseUrl: 'http://localhost:8080',
+    apiKey: 'your-key'
+  });
+</script>
+```
+
+### CORS Configuration
+
+If using from browser, ensure Sekha Controller allows CORS:
+
+```toml
+# config.toml
+[api]
+cors_enabled = true
+cors_origins = ["http://localhost:3000", "https://myapp.com"]
+```
+
+---
+
+## Migration from v0.x
+
+### Breaking Changes
 
 ```typescript
-class MemoryAgent {
-  private memory: MemoryController;
+// v0.x
+const results = await client.search({ query: 'test' });
 
-  async executeTask(task: string): Promise<void> {
-    // Check if we've done this before
-    const similarTasks = await this.memory.query(task, { limit: 3 });
-
-    if (similarTasks.length > 0 && similarTasks[0].similarity > 0.9) {
-      console.log('Found similar task - reusing approach');
-      // Reuse previous approach
-      return this.reuseApproach(similarTasks[0]);
-    }
-
-    // New task - execute and learn
-    const result = await this.executeNewTask(task);
-
-    // Store for future reference
-    await this.memory.store({
-      messages: [
-        { role: 'user', content: `Task: ${task}` },
-        { role: 'assistant', content: `Result: ${result}` }
-      ],
-      label: `Task: ${task.substring(0, 50)}`,
-      folder: '/agent/tasks',
-      importanceScore: 7
-    });
-  }
-}
+// v1.x (current)
+const results = await client.query({ query: 'test' });
 ```
+
+```typescript
+// v0.x
+await client.conversations.update(id, { label: 'New' });
+
+// v1.x
+await client.conversations.updateLabel(id, { label: 'New' });
+```
+
+### Upgrade Guide
+
+1. Update package: `npm install @sekha/sdk@latest`
+2. Rename `search()` → `query()`
+3. Update `conversations.update()` → `conversations.updateLabel()`
+4. Check TypeScript errors and fix
 
 ---
 
 ## Next Steps
 
-- **[REST API Reference](../api-reference/rest-api.md)** - Direct API access
 - **[Python SDK](python-sdk.md)** - Python client library
-- **[Examples Repository](https://github.com/sekha-ai/examples)** - More code examples
-- **[TypeScript Best Practices](https://github.com/sekha-ai/sekha-js-sdk/wiki/Best-Practices)** - Advanced patterns
+- **[REST API](../api-reference/rest-api.md)** - Full API reference
+- **[Examples](examples.md)** - More code examples
+- **[Integration Guides](../integrations/)** - Use with React, Vue, etc.
+
+---
+
+## Support
+
+- **Issues:** [GitHub Issues](https://github.com/sekha-ai/sekha-js-sdk/issues)
+- **Discord:** [Join Community](https://discord.gg/7RUTmdd2)
+- **Documentation:** [docs.sekha.dev](https://docs.sekha.dev)

@@ -1,81 +1,58 @@
-/* Sekha Documentation - Custom Styles */
+/* Custom styles for Sekha documentation */
 
-:root {
-  /* Custom color overrides */
-  --md-primary-fg-color: #4f46e5;  /* Indigo */
-  --md-accent-fg-color: #7c3aed;   /* Purple */
+/* Make logo larger */
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  height: 2.5rem !important;
+  width: auto !important;
 }
 
-/* Custom code block styling */
-.highlight {
+/* Adjust header spacing for larger logo */
+.md-header__title {
+  margin-left: 0.5rem;
+}
+
+/* Ensure logo scales properly on mobile */
+@media screen and (max-width: 76.1875em) {
+  .md-header__button.md-logo img,
+  .md-header__button.md-logo svg {
+    height: 2rem !important;
+  }
+}
+
+/* Better code block styling */
+.highlight pre {
   border-radius: 0.5rem;
 }
 
 /* Improve table readability */
 table {
-  font-size: 0.9em;
+  border-collapse: collapse;
+  width: 100%;
 }
 
 table th {
-  background-color: var(--md-primary-fg-color--light);
   font-weight: 600;
+  background-color: var(--md-default-fg-color--lightest);
 }
 
-/* Admonition custom styles */
+table td,
+table th {
+  padding: 0.75rem;
+}
+
+/* Admonition custom styling */
 .admonition {
   border-radius: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Code copy button hover effect */
-.md-clipboard:hover {
-  background-color: var(--md-accent-fg-color);
-}
-
-/* Custom footer styling */
+/* Footer improvements */
 .md-footer-custom {
   text-align: center;
   padding: 1rem 0;
-  font-size: 0.8rem;
-  opacity: 0.7;
+  color: var(--md-default-fg-color--light);
 }
 
 .md-footer-custom a {
-  color: inherit;
-  text-decoration: underline;
-}
-
-/* Improve navigation readability */
-.md-nav__link--active {
-  font-weight: 600;
-}
-
-/* Better spacing for lists */
-ul li, ol li {
-  margin-bottom: 0.5em;
-}
-
-/* Code inline styling */
-code {
-  padding: 0.2em 0.4em;
-  border-radius: 0.3em;
-  font-size: 0.9em;
-}
-
-/* Improve search highlight */
-.md-search-result__article--document {
-  border-radius: 0.5rem;
-}
-
-/* Custom homepage hero section (if needed) */
-.md-typeset .hero {
-  text-align: center;
-  padding: 2rem 0;
-}
-
-/* Better mobile responsiveness */
-@media screen and (max-width: 76.1875em) {
-  .md-typeset table {
-    font-size: 0.8em;
-  }
+  color: var(--md-primary-fg-color);
 }

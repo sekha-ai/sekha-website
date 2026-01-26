@@ -1,332 +1,277 @@
 # Configuration Reference
 
-Complete guide to configuring Sekha Controller.
+Complete guide to configuring Sekha Controller based on actual implementation.
 
 ## Configuration File
 
-Sekha reads configuration from `~/.sekha/config.toml` (or `/etc/sekha/config.toml` in production).
+Sekha loads configuration from three sources (in order of precedence):
 
-On first run, Sekha auto-generates a default config:
-
-```bash
-sekha-controller setup
-```
-
-This creates `~/.sekha/config.toml` with sensible defaults.
+1. **Environment variables** (highest priority) - Prefix: `SEKHA__`
+2. **User config** - `~/.sekha/config.toml`
+3. **Project config** - `./config.toml` (current directory)
+4. **Built-in defaults** (lowest priority)
 
 ---
 
-## Full Configuration Example
+## Minimal Configuration
+
+Create `~/.sekha/config.toml` with only the API key:
 
 ```toml
-# ~/.sekha/config.toml
+mcp_api_key = "your-secure-key-min-32-characters-long"
+```
 
-[server]
-host = "0.0.0.0"  # Listen on all interfaces
-port = 8080       # API server port
-api_key = "sk-sekha-your-secure-key-min-32-chars-long"  # CHANGE THIS!
+All other settings use sensible defaults.
 
-[database]
-url = "sqlite://~/.sekha/data/sekha.db"  # SQLite for single-user
-# url = "postgresql://user:pass@localhost:5432/sekha"  # Postgres for multi-user
-max_connections = 100
-connection_timeout_seconds = 5
+---
 
-[vector_store]
-chroma_url = "http://localhost:8000"
-collection_name = "sekha_memory"
-batch_size = 100
+## Complete Configuration Example
 
-[llm]
-# Current: Ollama (local)
-provider = "ollama"
-ollama_url = "http://localhost:11434"
-embedding_model = "nomic-embed-text:latest"
-summarization_model = "llama3.1:8b"
+```toml
+# Server Settings
+server_host = "0.0.0.0"              # Listen on all interfaces
+server_port = 8080                    # API server port
 
-# Future: OpenAI, Anthropic, Google
-# provider = "openai"
-# api_key = "sk-..."
-# embedding_model = "text-embedding-3-small"
+# Authentication
+mcp_api_key = "sk-sekha-your-mcp-key-min-32-chars"          # Required: MCP protocol key
+rest_api_key = "sk-sekha-your-rest-key-min-32-chars"        # Optional: REST API key (defaults to mcp_api_key)
+additional_api_keys = ["key1", "key2"]  # Optional: Additional valid API keys
 
-[orchestration]
-summarization_enabled = true
-pruning_enabled = true
-auto_embed = true
-label_suggestions = true
+# Database
+database_url = "sqlite://sekha.db"    # SQLite (local) or PostgreSQL connection string
+max_connections = 10                  # Database connection pool size (1-100)
 
-[logging]
-level = "info"  # trace | debug | info | warn | error
-format = "json"  # json | pretty
-output = "~/.sekha/logs/controller.log"
+# Vector Store (ChromaDB)
+chroma_url = "http://localhost:8000"  # ChromaDB endpoint
 
-[rate_limiting]
-requests_per_second = 100
-burst_size = 200
+# LLM Configuration
+ollama_url = "http://localhost:11434"           # Ollama server
+llm_bridge_url = "http://localhost:5001"        # LLM Bridge (Python service)
+embedding_model = "nomic-embed-text:latest"     # Embedding model name
+summarization_model = "llama3.1:8b"             # Summarization model name
 
-[cors]
-allowed_origins = [
-  "http://localhost:3000",
-  "https://your-app.com"
+# Features
+summarization_enabled = true          # Enable conversation summarization
+pruning_enabled = true                # Enable pruning suggestions
+
+# Logging
+log_level = "info"                    # trace | debug | info | warn | error
+
+# Rate Limiting
+rate_limit_per_minute = 1000          # Max requests per minute
+
+# CORS
+cors_enabled = true                   # Enable Cross-Origin Resource Sharing
+```
+
+---
+
+## Configuration Options Reference
+
+### Server Settings
+
+| Option | Type | Default | Validation | Description |
+|--------|------|---------|------------|-------------|
+| `server_host` | string | `"0.0.0.0"` | - | Interface to bind (use `"127.0.0.1"` for localhost-only) |
+| `server_port` | integer | `8080` | 1024-65535 | Port for API server |
+
+**Example: Localhost only**
+```toml
+server_host = "127.0.0.1"
+server_port = 9090
+```
+
+---
+
+### Authentication
+
+| Option | Type | Default | Validation | Description |
+|--------|------|---------|------------|-------------|
+| `mcp_api_key` | string | `"dev_default_key_change_me_1234567890"` | min 32 chars | **Required** - API key for MCP protocol |
+| `rest_api_key` | string | *(optional)* | - | Optional REST API key (defaults to `mcp_api_key`) |
+| `additional_api_keys` | array | `[]` | - | Additional valid API keys for multi-user access |
+
+**Example: Multiple API keys**
+```toml
+mcp_api_key = "sk-sekha-primary-key-12345678901234567890"
+rest_api_key = "sk-sekha-rest-key-09876543210987654321"
+additional_api_keys = [
+  "sk-sekha-user1-key-11111111111111111111",
+  "sk-sekha-user2-key-22222222222222222222"
 ]
+```
 
-[storage]
-data_dir = "~/.sekha/data"
-log_dir = "~/.sekha/logs"
-max_log_size_mb = 100
-max_log_files = 10
+!!! danger "Security: API Key Requirements"
+    - **Minimum length:** 32 characters
+    - **Never use default key in production!**
+    - **Generate secure keys:** `openssl rand -base64 32`
+
+---
+
+### Database
+
+| Option | Type | Default | Validation | Description |
+|--------|------|---------|------------|-------------|
+| `database_url` | string | `"sqlite://sekha.db"` | - | Database connection string |
+| `max_connections` | integer | `10` | 1-100 | Connection pool size |
+
+**SQLite (Single-user, local)**
+```toml
+database_url = "sqlite://~/.sekha/data/sekha.db"
+max_connections = 10
+```
+
+**PostgreSQL (Multi-user, production)**
+```toml
+database_url = "postgresql://sekha:password@localhost:5432/sekha"
+max_connections = 50
 ```
 
 ---
 
-## Section Reference
+### Vector Store (ChromaDB)
 
-### `[server]`
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `chroma_url` | string | `"http://localhost:8000"` | ChromaDB HTTP endpoint |
 
-HTTP server configuration.
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `host` | string | `"0.0.0.0"` | Interface to bind (use `127.0.0.1` for local-only) |
-| `port` | integer | `8080` | API server port |
-| `api_key` | string | *required* | Bearer token for API auth (**min 32 chars**) |
-| `request_timeout_seconds` | integer | `60` | Max request duration |
-| `max_body_size_mb` | integer | `10` | Max request body size |
-
-**Example:**
+**Example: Remote ChromaDB**
 ```toml
-[server]
-host = "127.0.0.1"  # Local-only
-port = 9090
-api_key = "sk-sekha-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
-request_timeout_seconds = 120
-```
-
----
-
-### `[database]`
-
-Primary database configuration.
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `url` | string | `sqlite://~/.sekha/data/sekha.db` | Database connection string |
-| `max_connections` | integer | `100` | Connection pool size |
-| `connection_timeout_seconds` | integer | `5` | Connection timeout |
-| `pool_size` | integer | `10` | Min connections in pool |
-
-**SQLite (single-user):**
-```toml
-[database]
-url = "sqlite://~/.sekha/data/sekha.db"
-```
-
-**PostgreSQL (multi-user):**
-```toml
-[database]
-url = "postgresql://sekha:password@localhost:5432/sekha"
-max_connections = 200
-pool_size = 20
-```
-
----
-
-### `[vector_store]`
-
-ChromaDB vector database configuration.
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `chroma_url` | string | `http://localhost:8000` | ChromaDB endpoint |
-| `collection_name` | string | `sekha_memory` | Collection for vectors |
-| `batch_size` | integer | `100` | Batch size for embedding |
-| `distance_metric` | string | `cosine` | Similarity metric (cosine, l2, ip) |
-
-**Example:**
-```toml
-[vector_store]
 chroma_url = "http://chroma.internal:8000"
-collection_name = "production_memory"
-batch_size = 200
 ```
 
 ---
 
-### `[llm]`
+### LLM Configuration
 
-LLM provider configuration.
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `ollama_url` | string | `"http://localhost:11434"` | Ollama server endpoint |
+| `llm_bridge_url` | string | `"http://localhost:5001"` | LLM Bridge service endpoint |
+| `embedding_model` | string | `"nomic-embed-text:latest"` | Model for generating embeddings |
+| `summarization_model` | string | `"llama3.1:8b"` | Model for conversation summarization |
 
-#### Ollama (Current Implementation)
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `provider` | string | `"ollama"` | LLM provider |
-| `ollama_url` | string | `http://localhost:11434` | Ollama server URL |
-| `embedding_model` | string | `nomic-embed-text:latest` | Model for embeddings |
-| `summarization_model` | string | `llama3.1:8b` | Model for summaries |
-| `timeout_seconds` | integer | `120` | LLM request timeout |
-
-**Example:**
+**Example: Custom models**
 ```toml
-[llm]
-provider = "ollama"
-ollama_url = "http://localhost:11434"
+ollama_url = "http://ollama-server:11434"
+llm_bridge_url = "http://llm-bridge:5001"
 embedding_model = "nomic-embed-text:latest"
 summarization_model = "llama3.1:8b"
-timeout_seconds = 180
 ```
 
-#### OpenAI (Future)
+!!! note "Required Models"
+    Both models must be available in Ollama:
+    ```bash
+    ollama pull nomic-embed-text:latest
+    ollama pull llama3.1:8b
+    ```
 
+---
+
+### Features
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `summarization_enabled` | boolean | `true` | Enable automatic conversation summarization |
+| `pruning_enabled` | boolean | `true` | Enable pruning suggestions for old conversations |
+
+**Example: Disable features**
 ```toml
-[llm]
-provider = "openai"
-api_key = "sk-..."
-embedding_model = "text-embedding-3-small"
-summarization_model = "gpt-4-turbo"
-```
-
-#### Anthropic (Future)
-
-```toml
-[llm]
-provider = "anthropic"
-api_key = "sk-ant-..."
-embedding_model = "voyage-2"
-summarization_model = "claude-3-sonnet"
+summarization_enabled = false  # Disable summarization to save compute
+pruning_enabled = false         # Disable pruning suggestions
 ```
 
 ---
 
-### `[orchestration]`
+### Logging
 
-Memory orchestration features.
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `summarization_enabled` | boolean | `true` | Enable hierarchical summaries |
-| `pruning_enabled` | boolean | `true` | Enable pruning suggestions |
-| `auto_embed` | boolean | `true` | Auto-embed new conversations |
-| `label_suggestions` | boolean | `true` | Enable AI label suggestions |
-| `context_budget_tokens` | integer | `8000` | Default context budget |
-
-**Example:**
-```toml
-[orchestration]
-summarization_enabled = true
-pruning_enabled = true
-auto_embed = true
-label_suggestions = true
-context_budget_tokens = 16000
-```
-
----
-
-### `[logging]`
-
-Logging configuration.
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `level` | string | `"info"` | Log level (trace, debug, info, warn, error) |
-| `format` | string | `"json"` | Log format (json, pretty) |
-| `output` | string | `~/.sekha/logs/controller.log` | Log file path |
-| `max_size_mb` | integer | `100` | Max log file size before rotation |
-| `max_files` | integer | `10` | Max rotated log files to keep |
+| Option | Type | Default | Options | Description |
+|--------|------|---------|---------|-------------|
+| `log_level` | string | `"info"` | `trace`, `debug`, `info`, `warn`, `error` | Logging verbosity |
 
 **Development:**
 ```toml
-[logging]
-level = "debug"
-format = "pretty"
-output = "stdout"
+log_level = "debug"
 ```
 
 **Production:**
 ```toml
-[logging]
-level = "info"
-format = "json"
-output = "/var/log/sekha/controller.log"
-max_size_mb = 500
-max_files = 30
+log_level = "info"
+```
+
+!!! tip "Log Output"
+    Logs are written to stdout. Use systemd, Docker, or your orchestrator to capture and rotate logs.
+
+---
+
+### Rate Limiting
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `rate_limit_per_minute` | integer | `1000` | Maximum requests per minute |
+
+**Example: Higher rate limit**
+```toml
+rate_limit_per_minute = 5000
 ```
 
 ---
 
-### `[rate_limiting]`
+### CORS (Cross-Origin Resource Sharing)
 
-API rate limiting.
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `cors_enabled` | boolean | `true` | Enable CORS headers for browser access |
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `enabled` | boolean | `true` | Enable rate limiting |
-| `requests_per_second` | integer | `100` | Max requests per second |
-| `burst_size` | integer | `200` | Max burst requests |
-| `per_ip` | boolean | `true` | Rate limit per IP address |
-
-**Example:**
+**Example: Disable CORS**
 ```toml
-[rate_limiting]
-enabled = true
-requests_per_second = 50
-burst_size = 100
-per_ip = true
-```
-
----
-
-### `[cors]`
-
-CORS (Cross-Origin Resource Sharing) configuration.
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `enabled` | boolean | `true` | Enable CORS |
-| `allowed_origins` | array | `["*"]` | Allowed origins (domains) |
-| `allowed_methods` | array | `["GET", "POST", "PUT", "DELETE"]` | Allowed HTTP methods |
-| `max_age` | integer | `3600` | Preflight cache duration (seconds) |
-
-**Example:**
-```toml
-[cors]
-enabled = true
-allowed_origins = [
-  "https://app.example.com",
-  "https://admin.example.com"
-]
-allowed_methods = ["GET", "POST", "PUT", "DELETE"]
-max_age = 7200
+cors_enabled = false  # API-only access, no browser clients
 ```
 
 ---
 
 ## Environment Variables
 
-Environment variables **override** config.toml settings.
+Environment variables **override** all config file settings.
 
-**Naming convention:** `SEKHA_<SECTION>_<KEY>`
+**Naming convention:** `SEKHA__<option>` (double underscore)
 
-### Common Overrides
+### Common Environment Variables
 
 ```bash
 # Server
-export SEKHA_SERVER_PORT=9090
-export SEKHA_SERVER_API_KEY="sk-sekha-production-key"
+export SEKHA__SERVER_HOST="0.0.0.0"
+export SEKHA__SERVER_PORT=8080
+
+# Authentication
+export SEKHA__MCP_API_KEY="your-secure-key"
+export SEKHA__REST_API_KEY="your-rest-key"
 
 # Database
-export SEKHA_DATABASE_URL="postgresql://user:pass@db:5432/sekha"
+export SEKHA__DATABASE_URL="postgresql://user:pass@db:5432/sekha"
+export SEKHA__MAX_CONNECTIONS=50
 
 # Vector Store
-export SEKHA_VECTOR_STORE_CHROMA_URL="http://chroma:8000"
+export SEKHA__CHROMA_URL="http://chroma:8000"
 
 # LLM
-export SEKHA_LLM_PROVIDER="ollama"
-export SEKHA_LLM_OLLAMA_URL="http://ollama:11434"
+export SEKHA__OLLAMA_URL="http://ollama:11434"
+export SEKHA__LLM_BRIDGE_URL="http://llm-bridge:5001"
+export SEKHA__EMBEDDING_MODEL="nomic-embed-text:latest"
+export SEKHA__SUMMARIZATION_MODEL="llama3.1:8b"
 
 # Logging
-export SEKHA_LOGGING_LEVEL="debug"
-export SEKHA_LOGGING_FORMAT="pretty"
+export SEKHA__LOG_LEVEL="debug"
+
+# Features
+export SEKHA__SUMMARIZATION_ENABLED=true
+export SEKHA__PRUNING_ENABLED=true
+
+# Rate Limiting
+export SEKHA__RATE_LIMIT_PER_MINUTE=2000
+
+# CORS
+export SEKHA__CORS_ENABLED=true
 ```
 
 ### Docker Environment
@@ -338,104 +283,267 @@ services:
   sekha-controller:
     image: ghcr.io/sekha-ai/sekha-controller:latest
     environment:
-      - SEKHA_SERVER_PORT=8080
-      - SEKHA_SERVER_API_KEY=${SEKHA_API_KEY}
-      - SEKHA_DATABASE_URL=postgresql://sekha:${DB_PASSWORD}@postgres:5432/sekha
-      - SEKHA_VECTOR_STORE_CHROMA_URL=http://chroma:8000
-      - SEKHA_LLM_OLLAMA_URL=http://ollama:11434
-      - RUST_LOG=info
+      - SEKHA__SERVER_PORT=8080
+      - SEKHA__MCP_API_KEY=${MCP_API_KEY}
+      - SEKHA__DATABASE_URL=postgresql://sekha:${DB_PASSWORD}@postgres:5432/sekha
+      - SEKHA__CHROMA_URL=http://chroma:8000
+      - SEKHA__OLLAMA_URL=http://ollama:11434
+      - SEKHA__LLM_BRIDGE_URL=http://llm-bridge:5001
+      - SEKHA__LOG_LEVEL=info
 ```
+
+---
+
+## Configuration Priority
+
+**Precedence (highest to lowest):**
+
+1. **Environment variables** - `SEKHA__*`
+2. **User config** - `~/.sekha/config.toml`
+3. **Project config** - `./config.toml`
+4. **Built-in defaults** - Hardcoded in `src/config.rs`
+
+**Example:** If you set `SEKHA__SERVER_PORT=9090`, it overrides the port in both config files.
 
 ---
 
 ## Security Best Practices
 
-### 1. Strong API Keys
+### 1. Generate Strong API Keys
 
-!!! danger "Critical"
-    Never use default keys in production!
-
-**Generate secure key:**
 ```bash
+# Generate a secure 32+ character key
 openssl rand -base64 32
+```
+
+**Output example:**
+```
+X9k2Lm4Np7Qr1Sv8Tw6Yz3Bc5Df0Gh9J+
 ```
 
 **Use in config:**
 ```toml
-[server]
-api_key = "sk-sekha-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+mcp_api_key = "sk-sekha-X9k2Lm4Np7Qr1Sv8Tw6Yz3Bc5Df0Gh9J"
 ```
 
-### 2. TLS/HTTPS
-
-**Enable TLS:**
-```toml
-[server]
-tls_enabled = true
-tls_cert = "/path/to/cert.pem"
-tls_key = "/path/to/key.pem"
-```
-
-**Or use reverse proxy (recommended):**
-- nginx
-- Caddy (auto-TLS)
-- Traefik
-
-### 3. Network Isolation
-
-**Bind to localhost only:**
-```toml
-[server]
-host = "127.0.0.1"  # Not accessible externally
-```
-
-**Use firewall:**
-```bash
-# Only allow from specific IPs
-sudo ufw allow from 192.168.1.0/24 to any port 8080
-```
-
-### 4. Read-Only Config
+### 2. Protect Configuration Files
 
 ```bash
+# Make config readable only by owner
+chmod 600 ~/.sekha/config.toml
+
+# For system-wide config
 sudo chown root:root /etc/sekha/config.toml
 sudo chmod 600 /etc/sekha/config.toml
 ```
 
+### 3. Use Environment Variables for Secrets
+
+**Never commit secrets to version control!**
+
+```bash
+# .env file (add to .gitignore)
+MCP_API_KEY=sk-sekha-...
+REST_API_KEY=sk-sekha-...
+DB_PASSWORD=...
+
+# Load in shell
+export $(cat .env | xargs)
+
+# Or use docker-compose
+docker compose --env-file .env up
+```
+
+### 4. Bind to Localhost in Development
+
+```toml
+server_host = "127.0.0.1"  # Only accessible from this machine
+```
+
+### 5. Use Separate Keys for MCP and REST
+
+```toml
+mcp_api_key = "sk-sekha-mcp-..."
+rest_api_key = "sk-sekha-rest-..."
+```
+
+This allows you to:
+- Rotate keys independently
+- Grant different access levels
+- Audit usage by protocol
+
 ---
 
-## Configuration Validation
+## Validation
 
-**Test configuration:**
+The controller validates configuration on startup:
+
+### API Key Validation
+
+- ✅ **Minimum length:** 32 characters
+- ❌ **Fails if shorter:** Server won't start
+
+### Port Validation
+
+- ✅ **Valid range:** 1024-65535
+- ❌ **Fails outside range:** Server won't start
+
+### Connection Pool Validation
+
+- ✅ **Valid range:** 1-100 connections
+- ❌ **Fails outside range:** Server won't start
+
+**Check startup logs for validation errors:**
+
 ```bash
-sekha-controller validate-config
+# Start controller and check logs
+sekha-controller
+
+# Look for validation errors
+[ERROR] Configuration validation failed: ...
 ```
 
-**Output:**
+---
+
+## Common Configuration Patterns
+
+### Development (Local)
+
+```toml
+server_host = "127.0.0.1"
+server_port = 8080
+mcp_api_key = "dev-key-for-local-testing-only-32char"
+database_url = "sqlite://sekha.db"
+ollama_url = "http://localhost:11434"
+chroma_url = "http://localhost:8000"
+llm_bridge_url = "http://localhost:5001"
+log_level = "debug"
 ```
-✓ Server configuration valid
-✓ Database connection successful
-✓ ChromaDB reachable
-✓ Ollama reachable
-✓ Embedding model available
-✓ Configuration validated successfully
+
+### Production (Docker)
+
+```toml
+server_host = "0.0.0.0"
+server_port = 8080
+mcp_api_key = "sk-sekha-production-key-min-32-chars"
+database_url = "postgresql://sekha:${DB_PASSWORD}@postgres:5432/sekha"
+ollama_url = "http://ollama:11434"
+chroma_url = "http://chroma:8000"
+llm_bridge_url = "http://llm-bridge:5001"
+max_connections = 50
+log_level = "info"
+rate_limit_per_minute = 5000
+```
+
+### Multi-User (Team)
+
+```toml
+mcp_api_key = "sk-sekha-team-admin-key-1234567890abcdef"
+additional_api_keys = [
+  "sk-sekha-alice-key-11111111111111111111",
+  "sk-sekha-bob-key-22222222222222222222",
+  "sk-sekha-charlie-key-33333333333333333333"
+]
+database_url = "postgresql://sekha:password@postgres:5432/sekha"
+max_connections = 100
+rate_limit_per_minute = 10000
+```
+
+---
+
+## Troubleshooting
+
+### "API key validation failed"
+
+**Problem:** API key is shorter than 32 characters
+
+**Solution:**
+```bash
+# Generate a new key
+openssl rand -base64 32
+
+# Update config.toml
+mcp_api_key = "sk-sekha-new-key-..."
+```
+
+### "Port already in use"
+
+**Problem:** Another service is using port 8080
+
+**Solution:**
+```toml
+server_port = 9090  # Use a different port
+```
+
+Or stop the conflicting service:
+```bash
+# Find what's using port 8080
+lsof -i :8080
+
+# Kill the process
+kill <PID>
+```
+
+### "Failed to connect to database"
+
+**Problem:** Database URL is incorrect or database is unreachable
+
+**Solution:**
+```bash
+# For PostgreSQL, verify connection
+psql postgresql://sekha:password@localhost:5432/sekha
+
+# For SQLite, check file path and permissions
+ls -la ~/.sekha/data/sekha.db
+```
+
+### "ChromaDB unreachable"
+
+**Problem:** ChromaDB isn't running or URL is wrong
+
+**Solution:**
+```bash
+# Check if ChromaDB is running
+curl http://localhost:8000/api/v1/heartbeat
+
+# Expected: {"nanosecond heartbeat": <timestamp>}
+
+# Start ChromaDB if needed
+cd sekha-docker/docker
+docker compose up -d chroma
+```
+
+### "Ollama connection failed"
+
+**Problem:** Ollama isn't running or URL is incorrect
+
+**Solution:**
+```bash
+# Check Ollama status
+curl http://localhost:11434/api/tags
+
+# Start Ollama if needed
+ollama serve
+
+# Pull required models
+ollama pull nomic-embed-text:latest
+ollama pull llama3.1:8b
 ```
 
 ---
 
 ## Next Steps
 
-- [First Conversation](first-conversation.md) - Test your configuration
-- [API Reference](../api-reference/rest-api.md) - Start using the API
-- [Deployment Guide](../deployment/docker-compose.md) - Deploy to production
-- [Troubleshooting](../troubleshooting/common-issues.md) - Common configuration issues
+- **[First Conversation](first-conversation.md)** - Test your configuration
+- **[Quickstart Guide](quickstart.md)** - Get started quickly
+- **[Deployment](../deployment/docker-compose.md)** - Deploy to production
+- **[API Reference](../api-reference/rest-api.md)** - Use the API
 
 ---
 
 !!! tip "Configuration Tips"
-
-    1. **Start with defaults** - Only change what you need
-    2. **Use environment variables** for secrets (never commit API keys)
-    3. **Enable JSON logging** in production for easier parsing
-    4. **Set appropriate rate limits** based on expected traffic
-    5. **Monitor logs** to tune configuration over time
+    1. **Start minimal** - Only set `mcp_api_key`, use defaults for everything else
+    2. **Use environment variables for secrets** - Never commit API keys to git
+    3. **Validate on startup** - Check logs for configuration errors
+    4. **Separate dev/prod configs** - Different security requirements
+    5. **Document team keys** - Track which key belongs to which user

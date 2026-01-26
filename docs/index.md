@@ -32,7 +32,7 @@
 
     ---
 
-    REST API, MCP protocol, Python/JS SDKs. Works with any LLM - OpenAI, Anthropic, Ollama, custom models.
+    REST API, MCP protocol, Python/JS SDKs. Works with any LLM - OpenAI, Anthropic, Ollama, 100+ more via LiteLLM.
 
     [:octicons-arrow-right-24: API Reference](api-reference/rest-api.md)
 
@@ -70,13 +70,14 @@ Every AI conversation today faces critical failures:
 graph LR
     A[User/Agent] -->|Conversations| B[Sekha Controller]
     B -->|Stores| C[SQLite + Chroma]
-    B -->|Retrieves| D[Semantic Search]
-    D -->|Context| E[LLM]
-    E -->|Response| A
+    B -->|Via LLM Bridge| D[LiteLLM]
+    D -->|Any LLM| E[OpenAI/Ollama/Claude/100+]
+    C -->|Retrieves| B
+    B -->|Context| A
     
     style B fill:#4051b5
     style C fill:#2d3748
-    style E fill:#805ad5
+    style D fill:#805ad5
 ```
 
 Sekha sits **between** you and any LLM, capturing every interaction and intelligently retrieving relevant context when needed.
@@ -89,7 +90,7 @@ Sekha sits **between** you and any LLM, capturing every interaction and intellig
 **📊 Hierarchical Summaries** - Daily → Weekly → Monthly rollups  
 **🏷️ Organization** - Labels, folders, importance scoring  
 **🔒 Sovereign** - Self-hosted, local-first, your data never leaves  
-**🔌 LLM Agnostic** - Works with Ollama, OpenAI, Anthropic, custom models  
+**🔌 LLM Agnostic** - Works with 100+ LLMs via LiteLLM  
 **⚡ Production Ready** - 85%+ test coverage, Docker deployment, sub-100ms queries  
 
 ---
@@ -141,20 +142,23 @@ Sekha sits **between** you and any LLM, capturing every interaction and intellig
     ```bash
     # Clone deployment repo
     git clone https://github.com/sekha-ai/sekha-docker.git
-    cd sekha-docker
+    cd sekha-docker/docker
     
-    # Start all services
-    docker compose up -d
+    # Start full stack
+    docker compose -f docker-compose.yml -f docker-compose.full.yml up -d
     
     # Verify health
     curl http://localhost:8080/health
     ```
     
     **What gets deployed:**
-    - Sekha Controller (Rust core)
-    - LLM Bridge (Python)
-    - ChromaDB (vectors)
-    - Ollama (local LLM)
+    
+    - ✅ **Sekha Controller** (Rust) - Memory orchestration engine
+    - ✅ **LLM Bridge** (Python) - Required LLM adapter via LiteLLM
+    - ✅ **ChromaDB** - Vector embeddings storage
+    - ✅ **Redis** - Celery broker for async tasks
+    - 🔧 **Ollama** (optional) - Local LLM, or use OpenAI/Anthropic/others
+    - 🔧 **Proxy** (optional) - Transparent capture layer
 
 [:octicons-arrow-right-24: Full Installation Guide](getting-started/installation.md){ .md-button .md-button--primary }
 
@@ -165,34 +169,51 @@ Sekha sits **between** you and any LLM, capturing every interaction and intellig
 Sekha is built for **production use** with world-class engineering:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│         SEKHA CONTROLLER (Rust)                          │
-│         Single Binary • Portable • ~50MB                 │
-└──────────────┬──────────────────────────────────────────┘
-               │
-    ┌──────────┼──────────┐
-    ▼          ▼          ▼
-┌────────┐ ┌────────┐ ┌──────────┐
-│  REST  │ │  MCP   │ │ Internal │
-│  API   │ │ Server │ │ Services │
-└────┬───┘ └───┬────┘ └────┬─────┘
-     └─────────┼───────────┘
-               ▼
-┌─────────────────────────────────────────────────────────┐
-│        MEMORY ORCHESTRATION ENGINE                       │
-│  • Semantic + Recency + Importance Ranking              │
-│  • Hierarchical Summarization                            │
-│  • Intelligent Pruning                                   │
-│  • Label Suggestions                                     │
-└──────────────┬──────────────────────────────────────────┘
-               │
-    ┌──────────┼──────────┐
-    ▼          ▼          ▼
-┌─────────┐ ┌────────┐ ┌────────────┐
-│ SQLite  │ │ Chroma │ │ LLM Bridge │
-│ (SeaORM)│ │ Vectors│ │  (Python)  │
-└─────────┘ └────────┘ └────────────┘
+┌───────────────────────────────────────────────────────────┐
+│  SEKHA CONTROLLER (Rust) - Memory Orchestration Engine    │
+│  • REST API (19 endpoints)                                │
+│  • MCP Server (7 tools for Claude Desktop)               │
+│  • 4-Phase Context Assembly                               │
+│  • SQLite (metadata) + ChromaDB (vectors)                │
+└────────────────────┬──────────────────────────────────────┘
+                     │
+                     ▼
+┌───────────────────────────────────────────────────────────┐
+│  LLM BRIDGE (Python) - REQUIRED                           │
+│  • Embedding generation (nomic-embed-text)                │
+│  • Summarization & entity extraction                      │
+│  • LiteLLM gateway (100+ LLM providers)                   │
+│  • Celery async task queue                                │
+└────────────────────┬──────────────────────────────────────┘
+                     │
+          ┌──────────┼──────────┐
+          ▼          ▼          ▼
+     ┌────────┐ ┌──────────┐ ┌──────────┐
+     │ Ollama │ │  OpenAI  │ │ Claude   │
+     │ Local  │ │   GPT-4  │ │  Sonnet  │
+     └────────┘ └──────────┘ └──────────┘
+                 + 97 more LLM providers
+
+┌───────────────────────────────────────────────────────────┐
+│  PROXY (Python) - OPTIONAL                                │
+│  • Transparent capture for generic LLM clients            │
+│  • Auto-injects context from past conversations           │
+│  • OpenAI-compatible API endpoint                         │
+│  • Web UI dashboard                                        │
+└───────────────────────────────────────────────────────────┘
 ```
+
+**Required Components:**
+
+1. **Sekha Controller** (Rust) - Core memory engine
+2. **LLM Bridge** (Python) - Universal LLM adapter
+3. **ChromaDB** - Vector similarity search
+4. **Redis** - Async task queue broker
+
+**Optional Components:**
+
+- **Proxy** - For transparent capture
+- **Ollama** - For local LLMs (or use cloud providers)
 
 [:octicons-arrow-right-24: Architecture Deep Dive](architecture/overview.md)
 
@@ -221,17 +242,18 @@ Sekha is built for **production use** with world-class engineering:
 
 Sekha is built as a modular system:
 
-| Repository | Purpose | Status |
-|------------|---------|--------|
-| [sekha-controller](https://github.com/sekha-ai/sekha-controller) | Core memory engine (Rust) | ✅ Production |
-| [sekha-llm-bridge](https://github.com/sekha-ai/sekha-llm-bridge) | LLM operations (Python) | ✅ Production |
-| [sekha-docker](https://github.com/sekha-ai/sekha-docker) | Deployment configs | ✅ Production |
-| [sekha-mcp](https://github.com/sekha-ai/sekha-mcp) | MCP protocol server | ✅ Production |
-| [sekha-python-sdk](https://github.com/sekha-ai/sekha-python-sdk) | Python client | 🔜 Publishing |
-| [sekha-js-sdk](https://github.com/sekha-ai/sekha-js-sdk) | JavaScript/TypeScript SDK | 🔜 Publishing |
-| [sekha-vscode](https://github.com/sekha-ai/sekha-vscode) | VS Code extension | 🚧 Beta |
-| [sekha-cli](https://github.com/sekha-ai/sekha-cli) | Terminal tool | 🚧 Beta |
-| [sekha-obsidian](https://github.com/sekha-ai/sekha-obsidian) | Obsidian plugin | 🚧 Beta |
+| Repository | Purpose | Language | Status |
+|------------|---------|----------|--------|
+| [sekha-controller](https://github.com/sekha-ai/sekha-controller) | Memory orchestration engine | Rust | ✅ Production |
+| [sekha-llm-bridge](https://github.com/sekha-ai/sekha-llm-bridge) | LLM adapter (REQUIRED) | Python | ✅ Production |
+| [sekha-proxy](https://github.com/sekha-ai/sekha-proxy) | Transparent capture (OPTIONAL) | Python | ✅ Production |
+| [sekha-docker](https://github.com/sekha-ai/sekha-docker) | Deployment configurations | Docker | ✅ Production |
+| [sekha-mcp](https://github.com/sekha-ai/sekha-mcp) | MCP protocol server | Python | ✅ Production |
+| [sekha-python-sdk](https://github.com/sekha-ai/sekha-python-sdk) | Python client library | Python | 🔜 Publishing |
+| [sekha-js-sdk](https://github.com/sekha-ai/sekha-js-sdk) | JavaScript/TypeScript SDK | TypeScript | 🔜 Publishing |
+| [sekha-vscode](https://github.com/sekha-ai/sekha-vscode) | VS Code extension | TypeScript | 🚧 Beta |
+| [sekha-cli](https://github.com/sekha-ai/sekha-cli) | Command-line interface | Go | 🚧 Beta |
+| [sekha-obsidian](https://github.com/sekha-ai/sekha-obsidian) | Obsidian note integration | TypeScript | 🚧 Beta |
 
 ---
 
@@ -281,7 +303,7 @@ Sekha is built as a modular system:
 
 -   [:material-api: **API Reference**](api-reference/rest-api.md)
     
-    Complete API documentation
+    19 REST endpoints + 7 MCP tools
 
 -   [:material-puzzle: **Integrations**](integrations/claude-desktop.md)
     

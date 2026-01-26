@@ -16,7 +16,7 @@ The story of why and how Sekha was created. A deep dive into the problems that l
 
 Sekha's development roadmap from v0.1 to v2.0 and beyond.
 
-**Current Status**: v0.1.1 - Production Ready
+**Current Status**: v0.1.0 - Production Ready
 
 **Upcoming:**
 - v0.2: Advanced features (summaries, scoring, VS Code)
@@ -44,9 +44,9 @@ Get help and connect with the community:
 ## Project Stats
 
 - **First Commit**: December 11, 2025
-- **Current Version**: v0.1.1
+- **Current Version**: v0.1.0
 - **Lines of Code**: ~20,000
-- **Test Coverage**: 85%+ (controller), 82% (bridge)
+- **Test Coverage**: 80%+ (controller), 82% (bridge)
 - **Contributors**: Open for contributions!
 - **License**: AGPL-3.0 / Commercial
 

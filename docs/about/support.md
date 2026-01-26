@@ -51,6 +51,7 @@ We're here to help you succeed with Sekha. Choose the support channel that best 
 
 - [sekha-controller](https://github.com/sekha-ai/sekha-controller/issues) - Core engine issues
 - [sekha-llm-bridge](https://github.com/sekha-ai/sekha-llm-bridge/issues) - LLM integration issues
+- [sekha-proxy](https://github.com/sekha-ai/sekha-proxy/issues) - Proxy issues
 - [sekha-docker](https://github.com/sekha-ai/sekha-docker/issues) - Deployment issues
 - [sekha-mcp](https://github.com/sekha-ai/sekha-mcp/issues) - Claude Desktop / MCP issues
 - [sekha-website](https://github.com/sekha-ai/sekha-website/issues) - Documentation issues
@@ -248,25 +249,8 @@ If you have a [commercial license](license.md), you receive priority support:
 **Stay updated:**
 
 - 🐦 **Twitter/X:** [@sekha_ai](https://twitter.com/sekha_ai)
-- 👙 **LinkedIn:** [Sekha AI](https://linkedin.com/company/sekha-ai)
+- 👙 **LinkedIn:** [Sekha AI](https://linkedin.com/company/sekha-ai) (coming soon)
 - 🐙 **GitHub:** [sekha-ai](https://github.com/sekha-ai)
-- 💌 **Bluesky:** [@sekha.dev](https://bsky.app/profile/sekha.dev)
-
----
-
-## Newsletter
-
-**Subscribe for monthly updates:**
-
-📨 **Sign up:** [newsletter.sekha.dev](https://newsletter.sekha.dev)
-
-**You'll get:**
-
-- New feature announcements
-- Community highlights
-- Use case spotlights
-- Performance tips and best practices
-- Early access to beta features
 
 ---
 

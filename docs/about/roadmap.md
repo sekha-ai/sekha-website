@@ -456,7 +456,7 @@ Roadmap is updated quarterly based on:
 **Propose features:**
 
 - [GitHub Discussions](https://github.com/sekha-ai/sekha-controller/discussions)
-- [Discord #feature-requests](https://discord.gg/sekha)
+- [Discord #feature-requests](https://discord.gg/gZb7U9deKH)
 - Email: roadmap@sekha.dev
 
 ---

@@ -187,7 +187,7 @@ Check [GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues?q=is%3
 
 ### Community
 
-- [Discord](https://discord.gg/sekha) - Chat with developers
+- [Discord](https://discord.gg/gZb7U9deKH) - Chat with developers
 - [GitHub Discussions](https://github.com/sekha-ai/sekha-controller/discussions) - Ask questions
 - [GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues) - Report bugs
 

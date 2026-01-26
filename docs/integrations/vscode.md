@@ -517,7 +517,7 @@ code --install-extension sekha-vscode-1.0.0.vsix
 ## Support
 
 - **Issues:** [GitHub Issues](https://github.com/sekha-ai/sekha-vscode/issues)
-- **Discord:** [Join Community](https://discord.gg/7RUTmdd2)
+- **Discord:** [Join Community](https://discord.gg/gZb7U9deKH)
 - **Documentation:** [docs.sekha.dev](https://docs.sekha.dev)
 
 ---
@@ -530,4 +530,4 @@ We welcome contributions!
 - **Feature requests:** [Submit a proposal](https://github.com/sekha-ai/sekha-vscode/discussions)
 - **Code contributions:** [Contributing Guide](../development/contributing.md)
 
-**Join the beta testing program!** Report bugs and share feedback in [Discord](https://discord.gg/7RUTmdd2).
+**Join the beta testing program!** Report bugs and share feedback in [Discord](https://discord.gg/gZb7U9deKH).

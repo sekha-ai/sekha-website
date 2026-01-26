@@ -271,7 +271,7 @@ Sekha is built as a modular system:
 
     ---
 
-    [:simple-discord: Join Community](https://discord.gg/sekha)
+    [:simple-discord: Join Community](https://discord.gg/gZb7U9deKH)
 
 -   :material-email:{ .lg .middle } __Email__
 

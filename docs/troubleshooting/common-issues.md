@@ -807,7 +807,7 @@ docker pull ghcr.io/sekha-ai/sekha-controller:latest
    [GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues)
 
 4. **Ask for help:**
-   - [Discord Community](https://discord.gg/sekha)
+   - [Discord Community](https://discord.gg/gZb7U9deKH)
    - [GitHub Discussions](https://github.com/sekha-ai/sekha-controller/discussions)
    - [Stack Overflow](https://stackoverflow.com/questions/tagged/sekha)
 

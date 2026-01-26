@@ -475,4 +475,4 @@ curl -X POST http://localhost:8080/api/v1/conversations \
 
 ## Questions?
 
-Join our [Discord community](https://discord.gg/sekha) or open an issue on [GitHub](https://github.com/sekha-ai/sekha-controller/issues).
+Join our [Discord community](https://discord.gg/gZb7U9deKH) or open an issue on [GitHub](https://github.com/sekha-ai/sekha-controller/issues).

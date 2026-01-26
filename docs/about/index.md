@@ -81,5 +81,5 @@ Special thanks to the Rust, AI, and open-source communities.
 
 - **Website**: [sekha.dev](https://sekha.dev)
 - **GitHub**: [github.com/sekha-ai](https://github.com/sekha-ai)
-- **Discord**: [discord.gg/sekha](https://discord.gg/sekha)
+- **Discord**: [discord.gg/sekha](https://discord.gg/gZb7U9deKH)
 - **Email**: [hello@sekha.dev](mailto:hello@sekha.dev)

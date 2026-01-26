@@ -394,6 +394,6 @@ We're building the memory system that will power the next generation of AI:
 ---
 
 - **GitHub:** [github.com/sekha-ai](https://github.com/sekha-ai)
-- **Discord:** [discord.gg/sekha](https://discord.gg/sekha)
+- **Discord:** [discord.gg/sekha](https://discord.gg/gZb7U9deKH)
 - **Email:** hello@sekha.dev
 - **Discussions:** [GitHub Discussions](https://github.com/sekha-ai/sekha-controller/discussions)

@@ -557,7 +557,7 @@ See: [Contributing Guide](../development/contributing.md)
 ### Where can I get help?
 
 **Community support (free):**
-- Discord: [discord.gg/sekha](https://discord.gg/sekha)
+- Discord: [discord.gg/sekha](https://discord.gg/gZb7U9deKH)
 - GitHub Discussions: [github.com/sekha-ai/sekha-controller/discussions](https://github.com/sekha-ai/sekha-controller/discussions)
 - GitHub Issues: [github.com/sekha-ai/sekha-controller/issues](https://github.com/sekha-ai/sekha-controller/issues)
 
@@ -584,7 +584,7 @@ Contact: [hello@sekha.dev](mailto:hello@sekha.dev)
 ## Still have questions?
 
 - 📖 Check our [full documentation](../index.md)
-- 💬 Ask on [Discord](https://discord.gg/sekha)
+- 💬 Ask on [Discord](https://discord.gg/gZb7U9deKH)
 - 🐛 Report issues on [GitHub](https://github.com/sekha-ai/sekha-controller/issues)
 - 📧 Email us: [hello@sekha.dev](mailto:hello@sekha.dev)
 

@@ -611,7 +611,7 @@ Violations can be reported to [hello@sekha.dev](mailto:hello@sekha.dev).
 
 **Stuck? Ask for help:**
 
-- [Discord #contributing channel](https://discord.gg/sekha)
+- [Discord #contributing channel](https://discord.gg/gZb7U9deKH)
 - [GitHub Discussions](https://github.com/sekha-ai/sekha-controller/discussions)
 - [Office Hours](https://calendar.google.com/calendar/sekha-office-hours) (Wednesdays 2-3 PM EST)
 
@@ -679,7 +679,7 @@ Your contributions remain open source regardless.
 
 ## Questions?
 
-- **Discord:** [discord.gg/sekha](https://discord.gg/sekha)
+- **Discord:** [discord.gg/sekha](https://discord.gg/gZb7U9deKH)
 - **Email:** [hello@sekha.dev](mailto:hello@sekha.dev)
 - **Office Hours:** [Wednesdays 2-3 PM EST](https://calendar.google.com/calendar/sekha-office-hours)
 

@@ -254,7 +254,7 @@ We believe:
 
 Email: [hello@sekha.dev](mailto:hello@sekha.dev)  
 License FAQ: [https://docs.sekha.dev/troubleshooting/faq](../troubleshooting/faq.md)  
-Community: [Discord](https://discord.gg/sekha)
+Community: [Discord](https://discord.gg/gZb7U9deKH)
 
 ---
 

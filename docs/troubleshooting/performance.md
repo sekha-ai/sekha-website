@@ -777,5 +777,5 @@ export default function() {
 ## Support
 
 - **Issues:** [GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues)
-- **Discord:** [Join Community](https://discord.gg/7RUTmdd2)
+- **Discord:** [Join Community](https://discord.gg/gZb7U9deKH)
 - **Documentation:** [docs.sekha.dev](https://docs.sekha.dev)

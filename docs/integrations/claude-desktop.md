@@ -477,5 +477,5 @@ Claude: [Uses memory_stats + memory_search]
 ## Support
 
 - **Issues:** [GitHub Issues](https://github.com/sekha-ai/sekha-mcp/issues)
-- **Discord:** [Join our community](https://discord.gg/7RUTmdd2)
+- **Discord:** [Join our community](https://discord.gg/gZb7U9deKH)
 - **Documentation:** [docs.sekha.dev](https://docs.sekha.dev)

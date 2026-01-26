@@ -140,7 +140,7 @@ SELECT COUNT(*) FROM conversations;
 
 ### Community Support
 
-- [Discord](https://discord.gg/sekha) - Real-time help
+- [Discord](https://discord.gg/gZb7U9deKH) - Real-time help
 - [GitHub Discussions](https://github.com/sekha-ai/sekha-controller/discussions) - Q&A forum
 - [GitHub Issues](https://github.com/sekha-ai/sekha-controller/issues) - Bug reports
 

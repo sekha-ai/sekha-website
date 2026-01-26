@@ -127,7 +127,7 @@ AGPL-3.0 - See [LICENSE](LICENSE) for details.
 ## 🆘 Support
 
 - **Issues**: [GitHub Issues](https://github.com/sekha-ai/sekha-website/issues)
-- **Discord**: [Join Community](https://discord.gg/sekha)
+- **Discord**: [Join Community](https://discord.gg/7RUTmdd2)
 - **Email**: hello@sekha.dev
 
 ---

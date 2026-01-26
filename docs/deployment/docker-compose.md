@@ -1,6 +1,6 @@
 # Docker Compose Deployment
 
-The easiest way to deploy the complete Sekha stack with all dependencies.
+Complete Sekha stack deployment using Docker Compose.
 
 ## Quick Start
 
@@ -9,404 +9,591 @@ The easiest way to deploy the complete Sekha stack with all dependencies.
 git clone https://github.com/sekha-ai/sekha-docker.git
 cd sekha-docker/docker
 
-# Set your API key
-export SEKHA_API_KEY="your-secure-key-here-min-32-chars"
+# Configure environment
+cp .env.example .env
+# Edit .env and set MCP_API_KEY and REST_API_KEY (32+ chars each)
 
-# Start all services
-docker-compose -f docker-compose.prod.yml up -d
+# Start full stack
+docker compose -f docker-compose.yml -f docker-compose.full.yml up -d
 
-# Check health
+# Verify
 curl http://localhost:8080/health
 ```
 
 ## What Gets Deployed
 
-The full stack includes:
+### Required Services
 
-| Service | Port | Purpose |
-|---------|------|---------||
-| **sekha-controller** | 8080 | Core Rust backend (REST API) |
-| **sekha-proxy** | 8081 | Context injection + Web UI |
-| **sekha-llm-bridge** | 5001 | LLM routing (Ollama, OpenAI, etc.) |
-| **chromadb** | 8000 | Vector database |
-| **redis** | 6379 | Cache layer |
-| **ollama** | 11434 | Local LLM runtime (optional) |
+| Service | Port | Purpose | Image |
+|---------|------|---------|-------|
+| **controller** | 8080 | Memory orchestration engine | `ghcr.io/sekha-ai/sekha-controller` |
+| **llm-bridge** | 5001 | LLM operations (LiteLLM) | `ghcr.io/sekha-ai/sekha-mcp` |
+| **chroma** | 8000 | Vector similarity search | `chromadb/chroma` |
+| **redis** | 6379 | Celery task broker | `redis:7.4-alpine` |
+
+### Optional Services
+
+| Service | Port | Purpose | When to Use |
+|---------|------|---------|-------------|
+| **proxy** | 8081 | Transparent capture layer | For generic LLM clients |
+| **ollama** | 11434 | Local LLM runtime | If not using cloud LLMs |
+
+**External Dependency:** Ollama running on host (or configure cloud LLM providers)
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│  Web UI (Port 8081)                         │
-│  - Chat interface                           │
-│  - Automatic memory                         │
-└──────────────┬──────────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────────┐
-│  Sekha Proxy (NEW - Port 8081)              │
-│  - Context injection                        │
-│  - Privacy filtering                        │
-└──────┬──────────────────┬───────────────────┘
-       │                  │
-       ▼                  ▼
-┌──────────────┐   ┌──────────────┐
-│ Controller   │   │ LLM Bridge   │
-│ (Port 8080)  │   │ (Port 5001)  │
-└──────┬───────┘   └──────────────┘
-       │
-       ▼
-┌──────────────┐   ┌──────────────┐
-│   ChromaDB   │   │    Redis     │
-│  (Port 8000) │   │  (Port 6379) │
-└──────────────┘   └──────────────┘
+┌───────────────────────────────────────────────────────────┐
+│  SEKHA CONTROLLER (Rust) - Port 8080                        │
+│  • REST API (19 endpoints)                                   │
+│  • MCP Server (7 tools)                                      │
+│  • 4-phase context assembly                                  │
+└────────────────────┬──────────────────────────────────────┘
+                     │
+        ┌────────────┼────────────┐
+        ▼            ▼            ▼
+   ┌────────┐  ┌────────┐  ┌─────────┐
+   │ SQLite │  │ Chroma │  │ LLM     │
+   │  :8080 │  │  :8000 │  │ Bridge  │
+   │        │  │        │  │  :5001  │
+   └────────┘  └────────┘  └────┬────┘
+                                │
+                     ┌──────────┼──────────┐
+                     ▼          ▼          ▼
+                ┌───────────┬──────────┬──────────┐
+                │  Ollama  │  OpenAI │  Claude  │
+                │  (host)  │  (API)  │  (API)   │
+                └───────────┴──────────┴──────────┘
+                     + 97 more via LiteLLM
+
+
+┌───────────────────────────────────────────────────────────┐
+│  PROXY (Python) - OPTIONAL - Port 8081                      │
+│  • Transparent capture for generic LLM clients              │
+│  • Auto-injects context from past conversations             │
+│  • OpenAI-compatible API endpoint                           │
+└───────────────────────────────────────────────────────────┘
 ```
 
-## Configuration
+---
 
-### Environment Variables
+## Environment Configuration
 
-Create a `.env` file or export variables:
+### Copy Template
 
 ```bash
-# Required
-export SEKHA_API_KEY="sk-sekha-your-production-key-minimum-32-characters"
+cd sekha-docker/docker
+cp .env.example .env
+```
 
-# Optional - Override defaults
-export SEKHA_PORT=8080
-export PROXY_PORT=8081
-export BRIDGE_PORT=5001
-export CHROMA_PORT=8000
-export REDIS_PORT=6379
+### Required Settings
 
-# LLM Configuration
-export OLLAMA_BASE_URL="http://ollama:11434"
-export OLLAMA_MODELS="nomic-embed-text:latest,llama3.1:8b"
+```bash
+# API Keys (REQUIRED - minimum 32 characters each)
+MCP_API_KEY=your-secure-mcp-key-here-min-32-chars
+REST_API_KEY=your-secure-rest-key-here-min-32-chars
 
-# Privacy Controls
-export AUTO_INJECT_CONTEXT=true
-export CONTEXT_BUDGET=4000
-export EXCLUDED_FOLDERS="/personal,/private"
+# Ollama URL
+# macOS/Windows Docker Desktop:
+OLLAMA_URL=http://host.docker.internal:11434
+
+# Linux:
+OLLAMA_URL=http://172.17.0.1:11434
+```
+
+### Generate Secure Keys
+
+```bash
+# Linux/macOS
+export MCP_KEY=$(openssl rand -base64 32)
+export REST_KEY=$(openssl rand -base64 32)
+echo "MCP_API_KEY=$MCP_KEY" >> .env
+echo "REST_API_KEY=$REST_KEY" >> .env
+
+# Windows PowerShell
+$MCP_KEY = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object {[char]$_})
+$REST_KEY = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object {[char]$_})
+"MCP_API_KEY=$MCP_KEY" | Out-File -Append .env
+"REST_API_KEY=$REST_KEY" | Out-File -Append .env
+```
+
+### Optional Settings
+
+```bash
+# Service Ports
+CONTROLLER_PORT=8080
+PROXY_PORT=8081
+CHROMA_PORT=8000
+LLM_BRIDGE_PORT=5001
+
+# LLM Models
+EMBEDDING_MODEL=nomic-embed-text:latest
+SUMMARIZATION_MODEL=llama3.1:8b
+
+# Features
+SUMMARIZATION_ENABLED=true
+PRUNING_ENABLED=true
+AUTO_INJECT_CONTEXT=true
+
+# Memory
+CONTEXT_TOKEN_BUDGET=4000
+DEFAULT_FOLDER=/conversations
+EXCLUDED_FOLDERS=
 
 # Logging
-export RUST_LOG=info
-export LOG_LEVEL=info
+LOG_LEVEL=info  # debug, info, warn, error
 ```
 
-### docker-compose.prod.yml
+---
+
+## Deployment Modes
+
+### Development (Pre-built Images)
+
+Uses pre-built images from GitHub Container Registry:
+
+```bash
+cd sekha-docker/docker
+
+# Base services only (Chroma + Redis)
+docker compose up -d
+
+# Full stack (+ Controller + LLM Bridge)
+docker compose -f docker-compose.yml -f docker-compose.full.yml up -d
+
+# With proxy (optional)
+docker compose -f docker-compose.yml -f docker-compose.full.yml -f docker-compose.proxy.yml up -d
+```
+
+### Local Build from Source
+
+**Requirements:**
+- All repos cloned as siblings:
+  ```
+  projects/
+  ├── sekha-controller/
+  ├── sekha-llm-bridge/
+  ├── sekha-proxy/         (optional)
+  └── sekha-docker/
+      └── docker/
+  ```
+
+```bash
+cd sekha-docker/docker
+
+# Build and run from source
+docker compose -f docker-compose.local.yml up -d
+
+# View build logs
+docker compose -f docker-compose.local.yml logs -f
+```
+
+### Production
+
+Optimized for production with resource limits and security:
+
+```bash
+cd sekha-docker/docker
+
+# Production stack
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+**Production optimizations:**
+- Pre-built images from registry
+- Resource limits (CPU/memory)
+- Proper restart policies
+- Production logging configuration
+- Health check intervals
+
+---
+
+## Compose Files Reference
+
+```
+sekha-docker/docker/
+├── docker-compose.yml           # Base: Chroma + Redis
+├── docker-compose.full.yml      # Adds: Controller + LLM Bridge
+├── docker-compose.prod.yml      # Production settings
+├── docker-compose.local.yml     # Local build from source
+├── docker-compose.dev.yml       # Development mode
+└── .env.example                 # Environment template
+```
+
+### Base Services (docker-compose.yml)
 
 ```yaml
-version: '3.8'
-
 services:
-  # Core Controller (Rust)
-  sekha-controller:
-    image: ghcr.io/sekha-ai/sekha-controller:latest
-    container_name: sekha-controller
-    ports:
-      - "8080:8080"
-    environment:
-      - SEKHA_API_KEY=${SEKHA_API_KEY}
-      - SEKHA_PORT=8080
-      - RUST_LOG=info
-      - CHROMA_URL=http://chroma:8000
-      - REDIS_URL=redis://redis:6379/0
-    volumes:
-      - sekha-data:/data
-    depends_on:
-      - chroma
-      - redis
-    restart: unless-stopped
-
-  # NEW: Proxy + Web UI
-  sekha-proxy:
-    image: ghcr.io/sekha-ai/sekha-proxy:latest
-    container_name: sekha-proxy
-    ports:
-      - "8081:8081"
-    environment:
-      - SEKHA_CONTROLLER_URL=http://sekha-controller:8080
-      - SEKHA_API_KEY=${SEKHA_API_KEY}
-      - AUTO_INJECT_CONTEXT=true
-      - CONTEXT_BUDGET=4000
-      - EXCLUDED_FOLDERS=${EXCLUDED_FOLDERS:-}
-    depends_on:
-      - sekha-controller
-    restart: unless-stopped
-
-  # LLM Bridge (Python)
-  sekha-llm-bridge:
-    image: ghcr.io/sekha-ai/sekha-llm-bridge:latest
-    container_name: sekha-llm-bridge
-    ports:
-      - "5001:5001"
-    environment:
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - redis
-    restart: unless-stopped
-
-  # Vector Database
   chroma:
     image: chromadb/chroma:latest
-    container_name: sekha-chroma
     ports:
-      - "8000:8000"
+      - "${CHROMA_PORT:-8000}:8000"
     volumes:
-      - chroma-data:/chroma/data
+      - chroma-data:/chroma/chroma
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
     restart: unless-stopped
 
-  # Cache Layer
   redis:
-    image: redis:7-alpine
-    container_name: sekha-redis
+    image: redis:7.4-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
     restart: unless-stopped
-
-  # Optional: Local LLM Runtime
-  ollama:
-    image: ollama/ollama:latest
-    container_name: sekha-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    restart: unless-stopped
-
-volumes:
-  sekha-data:
-  chroma-data:
-  redis-data:
-  ollama-data:
 ```
 
-## Usage
+### Full Stack (docker-compose.full.yml)
 
-### Starting the Stack
+Extends base with Controller and LLM Bridge:
+
+```yaml
+services:
+  controller:
+    image: ghcr.io/sekha-ai/sekha-controller:latest
+    ports:
+      - "${CONTROLLER_PORT:-8080}:8080"
+    environment:
+      - SEKHA__MCP_API_KEY=${MCP_API_KEY:?MCP_API_KEY required}
+      - SEKHA__REST_API_KEY=${REST_API_KEY:-}
+      - SEKHA__DATABASE_URL=${DATABASE_URL:-sqlite:///data/sekha.db}
+      - SEKHA__CHROMA_URL=http://chroma:8000
+      - SEKHA__LLM_BRIDGE_URL=http://llm-bridge:5001
+      - SEKHA__OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
+    volumes:
+      - ./data:/data
+    depends_on:
+      chroma:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+    restart: unless-stopped
+
+  llm-bridge:
+    image: ghcr.io/sekha-ai/sekha-mcp:latest
+    ports:
+      - "${LLM_BRIDGE_PORT:-5001}:5001"
+    environment:
+      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+    restart: unless-stopped
+```
+
+---
+
+## Common Commands
+
+### Starting Services
 
 ```bash
-# Production mode (daemon)
-docker-compose -f docker-compose.prod.yml up -d
+# Full stack (daemon mode)
+docker compose -f docker-compose.yml -f docker-compose.full.yml up -d
 
-# Development mode (with logs)
-docker-compose -f docker-compose.dev.yml up
+# With logs (foreground)
+docker compose -f docker-compose.yml -f docker-compose.full.yml up
 
 # Specific services only
-docker-compose up sekha-controller chroma redis
-```
-
-### Accessing Services
-
-**Web UI:**
-```bash
-open http://localhost:8081
-```
-
-**REST API:**
-```bash
-curl http://localhost:8080/health
-```
-
-**API Documentation:**
-```bash
-open http://localhost:8080/swagger-ui/
+docker compose up chroma redis
 ```
 
 ### Viewing Logs
 
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Specific service
-docker-compose logs -f sekha-controller
-docker-compose logs -f sekha-proxy
+docker compose logs -f controller
+docker compose logs -f llm-bridge
 
-# Last 100 lines
-docker-compose logs --tail=100
+# Last N lines
+docker compose logs --tail=100 controller
+
+# Since timestamp
+docker compose logs --since 2026-01-25T20:00:00 controller
 ```
 
-### Stopping Services
+### Managing Services
 
 ```bash
-# Stop all services
-docker-compose down
+# Stop all
+docker compose down
 
-# Stop and remove volumes (DELETES DATA)
-docker-compose down -v
+# Stop without removing containers
+docker compose stop
 
-# Stop specific service
-docker-compose stop sekha-controller
+# Restart service
+docker compose restart controller
+
+# Rebuild and restart
+docker compose up -d --build controller
+
+# Remove volumes (DELETES DATA!)
+docker compose down -v
 ```
 
-## Testing
+### Inspecting Services
+
+```bash
+# List running services
+docker compose ps
+
+# Service details
+docker compose ps controller
+
+# Execute command in container
+docker compose exec controller sh
+
+# View environment variables
+docker compose exec controller env
+```
+
+---
+
+## Verification
 
 ### Health Checks
 
 ```bash
-# Controller health
-curl http://localhost:8080/health
-
-# Expected output:
-{
-  "status": "healthy",
-  "timestamp": "2026-01-21T...",
-  "checks": {
-    "database": {"status": "ok"},
-    "chroma": {"status": "ok"}
-  }
-}
+# All services
+curl http://localhost:8080/health    # Controller
+curl http://localhost:5001/health    # LLM Bridge
+curl http://localhost:8000/api/v1/heartbeat  # ChromaDB
+docker compose exec redis redis-cli ping    # Redis
 ```
 
-### Test Memory Storage
+### Test Conversation
 
 ```bash
-# Store a conversation
+# Set your API key
+export SEKHA_KEY="your-mcp-api-key-from-env"
+
+# Create conversation
 curl -X POST http://localhost:8080/api/v1/conversations \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ${SEKHA_API_KEY}" \
+  -H "Authorization: Bearer $SEKHA_KEY" \
   -d '{
-    "label": "Test Conversation",
+    "label": "Docker Test",
     "folder": "/test",
     "messages": [
-      {"role": "user", "content": "Hello Sekha!"},
-      {"role": "assistant", "content": "Hello! I will remember this."}
+      {"role": "user", "content": "Testing Docker deployment"},
+      {"role": "assistant", "content": "Hello from Sekha!"}
     ]
   }'
 
-# Search for it
-curl -X POST http://localhost:8080/api/v1/query \
+# Search
+curl -X POST http://localhost:8080/api/v1/memory/search \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ${SEKHA_API_KEY}" \
-  -d '{"query": "hello", "limit": 5}'
+  -H "Authorization: Bearer $SEKHA_KEY" \
+  -d '{"query": "docker", "limit": 5}'
 ```
 
-### Test Proxy (NEW)
+---
+
+## Troubleshooting
+
+### Services Won't Start
 
 ```bash
-# Via Web UI
-open http://localhost:8081
+# Check status
+docker compose ps
 
-# Via API (OpenAI-compatible)
-curl -X POST http://localhost:8081/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [{"role": "user", "content": "Remember my name is Alice"}],
-    "folder": "/personal"
-  }'
+# View detailed logs
+docker compose logs controller
+
+# Check for port conflicts
+lsof -i :8080  # macOS/Linux
+netstat -ano | findstr :8080  # Windows
+
+# Verify .env file
+cat .env | grep -E "MCP_API_KEY|REST_API_KEY|OLLAMA_URL"
 ```
+
+### Controller Health Check Fails
+
+```bash
+# Check dependencies
+curl http://localhost:8000/api/v1/heartbeat  # Chroma should respond
+docker compose exec redis redis-cli ping    # Should return PONG
+
+# Check controller can reach them
+docker compose exec controller curl http://chroma:8000/api/v1/heartbeat
+docker compose exec controller sh -c 'nc -zv redis 6379'
+
+# View controller logs
+docker compose logs --tail=50 controller
+```
+
+### Ollama Connection Issues
+
+**macOS/Windows:**
+```bash
+# Verify Ollama running on host
+curl http://localhost:11434/api/version
+
+# Check .env has correct URL
+cat .env | grep OLLAMA_URL
+# Should be: OLLAMA_URL=http://host.docker.internal:11434
+```
+
+**Linux:**
+```bash
+# Get Docker bridge IP
+ip addr show docker0 | grep 'inet '
+# Usually 172.17.0.1
+
+# Update .env
+OLLAMA_URL=http://172.17.0.1:11434
+
+# Test from container
+docker compose exec llm-bridge curl http://172.17.0.1:11434/api/version
+```
+
+### Missing Models
+
+```bash
+# Check installed models
+ollama list
+
+# Pull required models
+ollama pull nomic-embed-text
+ollama pull llama3.1:8b
+
+# Verify models loaded
+ollama list
+# Should show both models with "latest" tag
+```
+
+### Permission Errors (Linux)
+
+```bash
+# Fix data directory permissions
+sudo chown -R $USER:$USER ./data ./chroma_data
+chmod -R 755 ./data ./chroma_data
+
+# Restart services
+docker compose restart
+```
+
+### Out of Memory
+
+```bash
+# Check container memory
+docker stats
+
+# Increase Docker Desktop memory limit:
+# Docker Desktop > Settings > Resources > Memory
+
+# Or add limits to compose file:
+services:
+  controller:
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+```
+
+---
 
 ## Updating
 
 ### Pull Latest Images
 
 ```bash
-docker-compose pull
-docker-compose up -d
+# Stop services
+docker compose down
+
+# Pull new images
+docker compose pull
+
+# Start with new images
+docker compose -f docker-compose.yml -f docker-compose.full.yml up -d
 ```
 
-### Backup Before Upgrade
+### Backup Before Update
 
 ```bash
-# Backup volumes
-docker run --rm -v sekha-data:/data -v $(pwd):/backup \
+# Backup SQLite database
+docker compose exec controller cat /data/sekha.db > sekha-backup-$(date +%Y%m%d).db
+
+# Backup entire data volume
+docker run --rm \
+  -v sekha-docker_data:/data \
+  -v $(pwd):/backup \
   alpine tar czf /backup/sekha-data-$(date +%Y%m%d).tar.gz /data
 
-# Backup database
-docker exec sekha-controller cat /data/sekha.db > sekha.db.backup
+# Backup ChromaDB
+docker run --rm \
+  -v sekha-docker_chroma-data:/data \
+  -v $(pwd):/backup \
+  alpine tar czf /backup/chroma-data-$(date +%Y%m%d).tar.gz /data
 ```
 
-## Troubleshooting
-
-### Controller Won't Start
+### Restore from Backup
 
 ```bash
-# Check logs
-docker-compose logs sekha-controller
+# Restore SQLite
+docker compose exec -T controller sh -c 'cat > /data/sekha.db' < sekha-backup-20260125.db
 
-# Common issues:
-# 1. Port 8080 already in use
-lsof -i :8080
-
-# 2. Missing API key
-echo $SEKHA_API_KEY
-
-# 3. Permission issues
-docker-compose down -v
-docker volume prune
+# Restore data volume
+docker run --rm \
+  -v sekha-docker_data:/data \
+  -v $(pwd):/backup \
+  alpine tar xzf /backup/sekha-data-20260125.tar.gz -C /
 ```
 
-### ChromaDB Connection Failed
-
-```bash
-# Verify ChromaDB is running
-docker ps | grep chroma
-
-# Test connection
-curl http://localhost:8000/api/v1/heartbeat
-
-# Restart if needed
-docker-compose restart chroma
-```
-
-### Ollama Models Not Loading
-
-```bash
-# Enter Ollama container
-docker exec -it sekha-ollama bash
-
-# Pull models manually
-ollama pull nomic-embed-text:latest
-ollama pull llama3.1:8b
-
-# List installed models
-ollama list
-```
-
-### Out of Memory
-
-```bash
-# Increase Docker memory limit (Docker Desktop > Settings > Resources)
-
-# Or limit container memory in docker-compose.yml:
-services:
-  sekha-controller:
-    mem_limit: 2g
-    memswap_limit: 2g
-```
+---
 
 ## Production Recommendations
 
 ### Security
 
 ```bash
-# Use strong API key (32+ characters)
-export SEKHA_API_KEY=$(openssl rand -hex 32)
+# Strong API keys (32+ characters)
+export MCP_KEY=$(openssl rand -base64 32)
+export REST_KEY=$(openssl rand -base64 32)
 
-# Don't expose ports publicly (use reverse proxy)
-# Only expose 8080/8081 through nginx/traefik
+# Don't expose internal ports
+# Only expose 8080 (and 8081 if using proxy)
+# Use reverse proxy (nginx/traefik) with TLS
 
-# Enable TLS
-# Use Let's Encrypt certificates
+# Enable firewall
+sudo ufw allow 80/tcp   # HTTP
+sudo ufw allow 443/tcp  # HTTPS
+sudo ufw deny 8080/tcp  # Don't expose directly
 ```
 
 ### Resource Limits
 
+Add to `docker-compose.prod.yml`:
+
 ```yaml
 services:
-  sekha-controller:
+  controller:
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  llm-bridge:
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 256M
 ```
 
 ### Monitoring
@@ -415,29 +602,57 @@ services:
 # Prometheus metrics
 curl http://localhost:8080/metrics
 
-# Health monitoring
-watch -n 5 'curl -s http://localhost:8080/health | jq'
+# Health monitoring script
+watch -n 10 'curl -s http://localhost:8080/health | jq'
+
+# Container stats
+docker stats
 ```
 
-### Backups
+### Automated Backups
 
 ```bash
-# Automated daily backups
+# Add to crontab
 crontab -e
 
-# Add this line:
-0 2 * * * docker exec sekha-controller cat /data/sekha.db > ~/backups/sekha-$(date +\%Y\%m\%d).db
+# Daily backup at 2 AM
+0 2 * * * cd /path/to/sekha-docker/docker && docker compose exec -T controller cat /data/sekha.db > ~/backups/sekha-$(date +\%Y\%m\%d).db
+
+# Weekly full backup
+0 3 * * 0 cd /path/to/sekha-docker/docker && docker run --rm -v sekha-docker_data:/data -v ~/backups:/backup alpine tar czf /backup/full-$(date +\%Y\%m\%d).tar.gz /data
 ```
+
+---
 
 ## Next Steps
 
-- [Configuration Reference](../reference/configuration.md) - All config options
-- [REST API](../api-reference/rest-api.md) - API endpoints
-- [Kubernetes Deployment](kubernetes.md) - Scale to production
-- [Monitoring](../reference/metrics.md) - Prometheus metrics
+<div class="grid cards" markdown>
+
+-   [:material-shield-lock: **Production Guide**](production.md)
+    
+    Security hardening and best practices
+
+-   [:material-shield-check: **Security**](security.md)
+    
+    Comprehensive security configuration
+
+-   [:material-kubernetes: **Kubernetes**](kubernetes.md)
+    
+    Scale to production with K8s
+
+-   [:material-chart-line: **Monitoring**](monitoring.md)
+    
+    Prometheus and Grafana setup
+
+</div>
+
+---
 
 ## Resources
 
 - **Repository:** [sekha-ai/sekha-docker](https://github.com/sekha-ai/sekha-docker)
-- **Images:** [GitHub Container Registry](https://github.com/orgs/sekha-ai/packages)
+- **Container Registry:** [GitHub Packages](https://github.com/orgs/sekha-ai/packages)
 - **Issues:** [Report problems](https://github.com/sekha-ai/sekha-docker/issues)
+- **Discussions:** [Ask questions](https://github.com/sekha-ai/sekha-controller/discussions)
+
+*Last updated: January 2026*

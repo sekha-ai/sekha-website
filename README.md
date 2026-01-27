@@ -1,5 +1,8 @@
 # Sekha Documentation Website
 
+Sekha fi haieroglyph enek. (Memory is the record of you.)
+
+
 > **Official documentation for the Sekha AI Memory Controller ecosystem**
 
 [![Documentation Status](https://img.shields.io/badge/docs-passing-brightgreen)](https://docs.sekha.dev)

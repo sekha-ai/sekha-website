@@ -172,9 +172,9 @@ Sekha is built for **production use** with world-class engineering:
 ┌───────────────────────────────────────────────────────────┐
 │  SEKHA CONTROLLER (Rust) - Memory Orchestration Engine    │
 │  • REST API (19 endpoints)                                │
-│  • MCP Server (7 tools for Claude Desktop)               │
+│  • MCP Server (7 tools for Claude Desktop)                │
 │  • 4-Phase Context Assembly                               │
-│  • SQLite (metadata) + ChromaDB (vectors)                │
+│  • SQLite (metadata) + ChromaDB (vectors)                 │
 └────────────────────┬──────────────────────────────────────┘
                      │
                      ▼
@@ -199,7 +199,7 @@ Sekha is built for **production use** with world-class engineering:
 │  • Transparent capture for generic LLM clients            │
 │  • Auto-injects context from past conversations           │
 │  • OpenAI-compatible API endpoint                         │
-│  • Web UI dashboard                                        │
+│  • Web UI dashboard                                       │
 └───────────────────────────────────────────────────────────┘
 ```
 

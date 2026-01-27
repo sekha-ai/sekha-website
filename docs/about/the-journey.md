@@ -4,6 +4,12 @@
 
 Every revolutionary technology starts with frustration.
 
+
+The following was completely fabricated by AI, but does capture some of the conception and intent. The real Journey document is still very much a work in progress that you can follow here:
+
+https://github.com/sekha-ai/sekha-website/blob/main/the-journey.md
+
+
 ### The Problem
 
 I was building AI agents for complex, multi-step workflows. They kept **forgetting** critical context:
@@ -124,7 +130,7 @@ Every AI developer, researcher, and power user faces the same problem:
 
 **If it's not tested, it's broken.**
 
-- 85%+ test coverage (unit + integration + e2e)
+- 80%+ test coverage (unit + integration + e2e)
 - CI/CD on every commit
 - Security audits automated
 - Real-world benchmarks
@@ -271,7 +277,7 @@ trait LLMProvider {
 - Async Rust (Tokio) for concurrency safety
 - Retry logic with exponential backoff
 - Health checks and graceful shutdown
-- 85%+ test coverage
+- 80%+ test coverage
 
 **Result:** 127 days uptime in production testing.
 
@@ -348,7 +354,7 @@ SQLite + ChromaDB is enough for 99% of use cases. Don't over-engineer.
 
 ### 2. Test Everything
 
-Bugs in memory systems compound over time. 85%+ coverage is non-negotiable.
+Bugs in memory systems compound over time. 80%+ coverage is non-negotiable.
 
 ### 3. Performance Matters
 

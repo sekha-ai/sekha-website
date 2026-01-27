@@ -10,7 +10,7 @@ Assembles the most relevant context for a given query using a 4-phase algorithm:
 
 1. **Recall**: Semantic search + pinned + recent messages
 2. **Rank**: Composite scoring (50% importance + 30% recency + 20% label match)
-3. **Assembly**: Fill 85% of token budget
+3. **Assembly**: Fill 80% of token budget
 4. **Enhancement**: Add citations and summaries
 
 **Request:**

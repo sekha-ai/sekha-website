@@ -164,7 +164,7 @@ Intelligent context assembly using the MemoryOrchestrator.
 - 4-phase algorithm (Recall → Rank → Assemble → Enhance)
 - Recency decay (exponential half-life: 7 days)
 - Label boosting (preferred labels get +5 score)
-- Token budgeting (85% fill rate)
+- Token budgeting (80% fill rate)
 - Automatic citation injection
 
 **Request:**
@@ -211,7 +211,7 @@ Citation injection: Adds source metadata automatically
 Algorithm:
 Recall: Semantic search (200 results) + pinned + recent
 Ranking: Composite score = 50% importance + 30% recency + 20% label match
-Assembly: Fill 85% of token budget, stop at limit
+Assembly: Fill 80% of token budget, stop at limit
 Enhancement: Inject citation metadata
 Performance: <500ms for 10K message corpus
 

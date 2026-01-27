@@ -45,7 +45,7 @@ Build the world's most capable AI memory system - from personal assistants to se
 ### Production Features
 
 - ✅ Docker multi-arch builds (amd64/arm64)
-- ✅ Comprehensive CI/CD with 85%+ coverage
+- ✅ Comprehensive CI/CD with 80%+ coverage
 - ✅ Security audits (cargo-deny, cargo-audit)
 - ✅ Health checks and Prometheus metrics
 - ✅ Hot config reload

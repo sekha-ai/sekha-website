@@ -118,7 +118,7 @@ Cause: Multiple tests accessing same SQLite file
 Solution: Use sqlite::memory: for each test
 Current Test Status
 Test Suite	        Passing	        Coverage
-Unit Tests	        3/3	            85%
+Unit Tests	        3/3	            80%
 Integration Tests	4/5	            75%
 E2E Smoke Tests	N/A	0%
 Note: One integration test fails without Ollama running. This is expected behavior.
@@ -154,7 +154,7 @@ cargo test test_orchestrator_label
 | Context Assembly | ✅ | ✅ | 95% |
 | Hierarchical Summarizer | ✅ | ✅ | 90% |
 | Importance Engine | ✅ | ✅ | 100% |
-| Pruning Engine | ✅ | ✅ | 85% |
+| Pruning Engine | ✅ | ✅ | 80% |
 | Label Intelligence | ✅ | ✅ | 100% |
 
 ### Performance Benchmarks

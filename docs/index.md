@@ -91,7 +91,7 @@ Sekha sits **between** you and any LLM, capturing every interaction and intellig
 **🏷️ Organization** - Labels, folders, importance scoring  
 **🔒 Sovereign** - Self-hosted, local-first, your data never leaves  
 **🔌 LLM Agnostic** - Works with 100+ LLMs via LiteLLM  
-**⚡ Production Ready** - 85%+ test coverage, Docker deployment, sub-100ms queries  
+**⚡ Production Ready** - 80%+ test coverage, Docker deployment, sub-100ms queries  
 
 ---
 

@@ -256,7 +256,7 @@ def test_create_conversation(sample_conversation):
 - **Controller (Rust):** >80% (enforced in CI)
 - **LLM Bridge (Python):** >80%
 - **Python SDK:** >90% (highest standard)
-- **JS SDK:** >85%
+- **JS SDK:** >80%
 - **MCP Server:** >80%
 - **CLI:** >80%
 - **VS Code:** >70% (UI testing harder)

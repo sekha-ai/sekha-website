@@ -120,7 +120,7 @@ sekha-llm-bridge/
 
 ### Test Coverage
 
-We maintain **85%+ coverage**:
+We maintain **80%+ coverage**:
 
 ```bash
 # Generate coverage report
@@ -147,7 +147,7 @@ All PRs must pass:
 - ✅ Formatting (`cargo fmt`)
 - ✅ Linting (`cargo clippy`)
 - ✅ Tests (all tests pass)
-- ✅ Coverage (85%+ maintained)
+- ✅ Coverage (80%+ maintained)
 - ✅ Security audit (`cargo deny`)
 
 ### CI/CD

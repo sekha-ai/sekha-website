@@ -1,20 +1,22 @@
 # Python SDK
 
-Official Python client library for Sekha Controller.
+Official Python client library for Sekha AI Memory System with unified access to Controller, MCP, and Bridge services.
 
 ## Overview
 
-The Sekha Python SDK provides:
+The Sekha Python SDK v0.2.0 provides:
 
-- ✅ **Full REST API coverage** - All 19 endpoints
-- ✅ **Type hints** - Full autocomplete in IDEs
-- ✅ **Async/await support** - Both sync and async clients
-- ✅ **Pydantic models** - Validated request/response objects
-- ✅ **Retry logic** - Automatic retry with exponential backoff
-- ✅ **Error handling** - Rich exception types
-- ✅ **Streaming support** - For large exports
+- ✅ **Unified Client Interface** - Single client for all services (Controller, MCP, Bridge)
+- ✅ **Complete API Coverage** - 19 Controller + 4 Bridge + 2 MCP endpoints
+- ✅ **5 Convenience Workflows** - High-level methods for common patterns
+- ✅ **Type Safety** - Full type hints with runtime validation
+- ✅ **Async/Await Support** - Built on httpx with connection pooling
+- ✅ **Streaming Support** - Server-sent events for LLM completions
+- ✅ **Automatic Retries** - Exponential backoff with jitter
+- ✅ **Rate Limiting** - Built-in token bucket rate limiter
+- ✅ **90%+ Test Coverage** - Comprehensive test suite (2,000+ lines)
 
-**Status:** Beta - Ready for testing
+**Status:** v0.2.0 - Production Ready
 
 ---
 
@@ -23,7 +25,7 @@ The Sekha Python SDK provides:
 ### From PyPI (Coming Soon)
 
 ```bash
-pip install sekha-sdk
+pip install sekha-python-sdk
 ```
 
 ### From Source
@@ -37,69 +39,114 @@ pip install -e .
 ### Requirements
 
 - Python 3.9+
-- requests (sync client)
-- httpx (async client)
+- httpx (async HTTP client)
 - pydantic (data validation)
+- python-dotenv (environment variables)
+- aiofiles (async file operations)
+- backoff (retry logic)
 
 ---
 
 ## Quick Start
 
-### Sync Client
+### Unified Client (Recommended)
 
 ```python
 from sekha import SekhaClient
 
-# Initialize
+# Initialize with all services
 client = SekhaClient(
-    base_url="http://localhost:8080",
-    api_key="your-rest-api-key-here"
+    controller_url="http://localhost:8080",
+    api_key="sk-your-api-key-here",
+    bridge_url="http://localhost:5001",  # Optional
 )
 
-# Create conversation
-conversation = client.conversations.create(
-    label="My First Conversation",
-    folder="/work/projects",
-    messages=[
-        {"role": "user", "content": "What is RAG?"},
-        {"role": "assistant", "content": "RAG stands for..."}
+# ===== CONTROLLER: Memory Operations =====
+await client.controller.create_conversation({
+    "label": "My Conversation",
+    "messages": [
+        {"role": "user", "content": "Hello Sekha!"},
+        {"role": "assistant", "content": "Hello! I'll remember this."}
     ]
+})
+
+# ===== BRIDGE: LLM Completions =====
+response = await client.bridge.complete(
+    messages=[
+        {"role": "user", "content": "Explain quantum computing"}
+    ],
+    model="gpt-4",
+    temperature=0.7
+)
+print(response["choices"][0]["message"]["content"])
+
+# ===== MCP: Memory Statistics =====
+stats = await client.mcp.memory_stats({
+    "labels": ["important"],
+    "start_date": "2026-01-01T00:00:00Z"
+})
+print(f"Total conversations: {stats['total_conversations']}")
+```
+
+### Convenience Workflows (NEW in v0.2.0)
+
+High-level methods that coordinate multiple services:
+
+```python
+# 1. Store conversation and immediately search
+results = await client.store_and_query(
+    messages=[
+        {"role": "user", "content": "Discussed project timeline"},
+        {"role": "assistant", "content": "2 week sprint cycle"}
+    ],
+    query="timeline",
+    label="Planning"
 )
 
-print(f"Created: {conversation.id}")
+# 2. Assemble context from memory + generate LLM completion
+response = await client.complete_with_context(
+    prompt="Continue our architecture discussion",
+    context_query="architecture decisions",
+    model="gpt-4",
+    context_budget=4000
+)
 
-# Search semantically
-results = client.query(
-    query="retrieval augmented generation",
+# 3. Search memory + use results in LLM prompt
+response = await client.complete_with_memory(
+    prompt="Summarize our past discussions about:",
+    search_query="architecture microservices",
+    model="gpt-4",
     limit=5
 )
 
-for result in results:
-    print(f"{result.label}: {result.score:.2f}")
+# 4. Stream LLM response with assembled context
+async for chunk in await client.stream_with_context(
+    prompt="Explain our deployment strategy",
+    context_query="deployment docker kubernetes",
+    model="gpt-4"
+):
+    print(chunk["choices"][0]["delta"].get("content", ""), end="")
+
+# 5. Health check all services concurrently
+health = await client.health_check()
+print(f"Controller: {health['controller']['status']}")
+print(f"Bridge: {health['bridge']['status']}")
 ```
 
-### Async Client
+### Async Context Manager
 
 ```python
-from sekha import AsyncSekhaClient
-import asyncio
+from sekha import SekhaClient
 
-async def main():
-    async with AsyncSekhaClient(
-        base_url="http://localhost:8080",
-        api_key="your-key"
-    ) as client:
-        # Create
-        conversation = await client.conversations.create(
-            label="Async Conversation",
-            messages=[{"role": "user", "content": "Hello"}]
-        )
-        
-        # Search
-        results = await client.query("hello")
-        print(f"Found {len(results)} results")
-
-asyncio.run(main())
+async with SekhaClient(
+    controller_url="http://localhost:8080",
+    api_key="sk-your-api-key",
+    bridge_url="http://localhost:5001"
+) as client:
+    # All clients automatically close on exit
+    await client.controller.create_conversation({...})
+    await client.bridge.complete(messages=[...])
+    await client.mcp.memory_stats({})
 ```
 
 ---
@@ -108,38 +155,65 @@ asyncio.run(main())
 
 ### Client Initialization
 
-```python
-from sekha import SekhaClient
+#### SekhaClient (Unified)
 
+```python
+from sekha import SekhaClient, SekhaConfig
+
+# Option 1: Direct initialization
 client = SekhaClient(
-    base_url="http://localhost:8080",  # Required
-    api_key="your-api-key",             # Required
-    timeout=30,                         # Request timeout (seconds)
-    max_retries=3,                      # Retry failed requests
-    verify_ssl=True                     # SSL verification
+    controller_url="http://localhost:8080",
+    api_key="sk-your-api-key",
+    bridge_url="http://localhost:5001",
+    bridge_api_key="bridge-key",  # Optional
+    timeout=30.0,
+    max_retries=3
+)
+
+# Option 2: Config object
+config = SekhaConfig(
+    controller_url="http://localhost:8080",
+    api_key="sk-your-api-key",
+    bridge_url="http://localhost:5001",
+    timeout=30.0
+)
+client = SekhaClient(config)
+
+# Option 3: Factory function
+from sekha import create_sekha_client
+
+client = create_sekha_client(
+    controller_url="http://localhost:8080",
+    api_key="sk-your-api-key",
+    bridge_url="http://localhost:5001"
 )
 ```
 
-**Parameters:**
+#### MemoryController (Controller Only)
 
-- `base_url` (str): Sekha Controller URL
-- `api_key` (str): REST API key (min 32 characters)
-- `timeout` (int): Request timeout in seconds (default: 30)
-- `max_retries` (int): Number of retries for failed requests (default: 3)
-- `verify_ssl` (bool): Verify SSL certificates (default: True)
+```python
+from sekha import MemoryController
+
+client = MemoryController(
+    base_url="http://localhost:8080",
+    api_key="sk-your-api-key-here",
+    timeout=30.0,
+    max_retries=3
+)
+```
 
 ---
 
-### Conversations
+### Controller API (Memory Operations)
 
 #### Create Conversation
 
 ```python
-conversation = client.conversations.create(
-    label="API Design Discussion",
-    folder="/work/engineering",
-    importance_score=8,
-    messages=[
+conversation = await client.controller.create_conversation({
+    "label": "API Design Discussion",
+    "folder": "/work/engineering",
+    "importance_score": 8,
+    "messages": [
         {
             "role": "user",
             "content": "How should we design the REST API?"
@@ -149,198 +223,33 @@ conversation = client.conversations.create(
             "content": "Consider RESTful principles..."
         }
     ]
-)
+})
 
-print(conversation.id)          # UUID
-print(conversation.label)       # "API Design Discussion"
-print(conversation.created_at)  # datetime
+print(conversation["id"])          # UUID
+print(conversation["label"])       # "API Design Discussion"
+print(conversation["created_at"])  # ISO timestamp
 ```
 
-**Returns:** `Conversation` object
-
-**Fields:**
-- `id` (UUID): Conversation ID
-- `label` (str): Conversation label
-- `folder` (str): Folder path
-- `status` (str): "active" or "archived"
-- `message_count` (int): Number of messages
-- `created_at` (datetime): Creation timestamp
-
----
-
-#### Get Conversation
+#### Query (Semantic Search)
 
 ```python
-from uuid import UUID
-
-conversation = client.conversations.get(
-    UUID("550e8400-e29b-41d4-a716-446655440000")
-)
-
-print(conversation.label)
-print(conversation.message_count)
-```
-
----
-
-#### List Conversations
-
-```python
-conversations = client.conversations.list(
-    folder="/work",
-    pinned=True,
-    archived=False,
-    page=1,
-    page_size=50
-)
-
-print(f"Total: {conversations.total}")
-for conv in conversations.results:
-    print(f"{conv.label} - {conv.folder}")
-```
-
-**Parameters:**
-
-- `label` (str, optional): Filter by label
-- `folder` (str, optional): Filter by folder
-- `pinned` (bool, optional): Filter by pinned status
-- `archived` (bool, optional): Filter by archived status
-- `page` (int): Page number (default: 1)
-- `page_size` (int): Results per page (default: 50, max: 100)
-
-**Returns:** `QueryResponse` with:
-- `results` (List[SearchResult]): Conversations
-- `total` (int): Total count
-- `page` (int): Current page
-- `page_size` (int): Page size
-
----
-
-#### Update Label/Folder
-
-```python
-# Update label and folder
-client.conversations.update_label(
-    conversation_id=UUID("..."),
-    label="Updated Label",
-    folder="/new/folder"
-)
-
-# Update folder only
-client.conversations.update_folder(
-    conversation_id=UUID("..."),
-    folder="/work/archived"
-)
-```
-
----
-
-#### Pin/Archive
-
-```python
-# Pin (sets importance to 10)
-client.conversations.pin(UUID("..."))
-
-# Archive
-client.conversations.archive(UUID("..."))
-```
-
----
-
-#### Delete Conversation
-
-```python
-client.conversations.delete(UUID("..."))
-```
-
----
-
-#### Count Conversations
-
-```python
-# Count all
-total = client.conversations.count()
-
-# Count by label
-count = client.conversations.count(label="API Design")
-
-# Count by folder
-count = client.conversations.count(folder="/work/engineering")
-```
-
----
-
-### Search & Query
-
-#### Semantic Query
-
-```python
-results = client.query(
+results = await client.controller.query(
     query="How to implement authentication?",
-    limit=10,
-    filters={
-        "folder": "/work/engineering",
-        "importance_min": 7,
-        "date_from": "2026-01-01T00:00:00Z"
-    }
+    limit=10
 )
 
-for result in results:
-    print(f"[{result.score:.2f}] {result.label}")
-    print(f"  Folder: {result.folder}")
-    print(f"  Content: {result.content[:100]}...")
-    print()
+for result in results["results"]:
+    print(f"[{result['score']:.2f}] {result['label']}")
+    print(f"  Content: {result['content'][:100]}...")
 ```
 
-**Parameters:**
-
-- `query` (str): Search query
-- `limit` (int): Max results (default: 10)
-- `offset` (int): Pagination offset (default: 0)
-- `filters` (dict, optional):
-  - `folder` (str): Path filter
-  - `label` (str): Label filter
-  - `importance_min` (int): Min importance score
-  - `importance_max` (int): Max importance score
-  - `date_from` (str): ISO 8601 timestamp
-  - `date_to` (str): ISO 8601 timestamp
-
-**Returns:** `List[SearchResult]`
-
-**SearchResult fields:**
-- `conversation_id` (UUID): Conversation ID
-- `message_id` (UUID): Message ID
-- `score` (float): Similarity score (0-1)
-- `content` (str): Message content
-- `label` (str): Conversation label
-- `folder` (str): Folder path
-- `timestamp` (datetime): Message timestamp
-- `metadata` (dict): Additional metadata
-
----
-
-#### Full-Text Search
+#### Assemble Context
 
 ```python
-results = client.search.fulltext(
-    query="authentication oauth jwt",
-    limit=20
-)
-
-for result in results:
-    print(f"{result.content}")
-```
-
----
-
-### Context Assembly
-
-```python
-context = client.context.assemble(
+context = await client.controller.assemble_context(
     query="Continue our API design discussion",
-    preferred_labels=["API Design", "Architecture"],
     context_budget=8000,  # Max tokens
-    excluded_folders=["/personal"]
+    preferred_labels=["API Design", "Architecture"]
 )
 
 # Use in LLM prompt
@@ -351,119 +260,286 @@ messages = [
 ]
 ```
 
-**Returns:** `List[Message]` ready for LLM input
+#### List Conversations
 
----
+```python
+conversations = await client.controller.list_conversations(
+    folder="/work",
+    pinned=True,
+    page=1,
+    page_size=50
+)
 
-### Summarization
+print(f"Total: {conversations['total']}")
+for conv in conversations['results']:
+    print(f"{conv['label']} - {conv['folder']}")
+```
+
+#### Get Conversation
+
+```python
+conversation = await client.controller.get_conversation(
+    "550e8400-e29b-41d4-a716-446655440000"
+)
+
+print(conversation["label"])
+print(conversation["message_count"])
+```
+
+#### Update Label/Folder
+
+```python
+# Update label and folder
+await client.controller.update_label(
+    conversation_id="...",
+    label="Updated Label",
+    folder="/new/folder"
+)
+
+# Update folder only
+await client.controller.update_folder(
+    conversation_id="...",
+    folder="/work/archived"
+)
+```
+
+#### Pin/Archive/Delete
+
+```python
+# Pin (sets importance to 10)
+await client.controller.pin_conversation("...")
+
+# Archive
+await client.controller.archive_conversation("...")
+
+# Delete
+await client.controller.delete_conversation("...")
+```
+
+#### Summarize
 
 ```python
 # Daily summary
-summary = client.summarize(
-    conversation_id=UUID("..."),
+summary = await client.controller.summarize(
+    conversation_id="...",
     level="daily"
 )
 
-print(summary.summary)
-print(summary.generated_at)
-
-# Weekly summary
-summary = client.summarize(
-    conversation_id=UUID("..."),
-    level="weekly"
-)
-
-# Monthly summary
-summary = client.summarize(
-    conversation_id=UUID("..."),
-    level="monthly"
-)
+print(summary["summary"])
+print(summary["generated_at"])
 ```
 
-**Levels:** `"daily"`, `"weekly"`, `"monthly"`
-
----
-
-### Pruning
-
-#### Dry Run
+#### Prune (Dry Run and Execute)
 
 ```python
-suggestions = client.prune.dry_run(
+# Get pruning suggestions
+suggestions = await client.controller.prune_dry_run(
     threshold_days=90
 )
 
-print(f"Found {suggestions.total} candidates for pruning")
+print(f"Found {len(suggestions['suggestions'])} candidates")
 
-for suggestion in suggestions.suggestions:
-    print(f"{suggestion.conversation_label}")
-    print(f"  Last accessed: {suggestion.last_accessed}")
-    print(f"  Importance: {suggestion.importance_score}")
-    print(f"  Recommendation: {suggestion.recommendation}")
-    print()
-```
-
-**Returns:** `PruneResponse` with:
-- `suggestions` (List[PruningSuggestion])
-- `total` (int): Number of suggestions
-
----
-
-#### Execute Pruning
-
-```python
-# Archive low-priority conversations
+# Execute pruning
 to_archive = [
-    s.conversation_id 
-    for s in suggestions.suggestions
-    if s.importance_score <= 3
+    s["conversation_id"]
+    for s in suggestions["suggestions"]
+    if s["importance_score"] <= 3
 ]
 
-client.prune.execute(to_archive)
+await client.controller.prune_execute(to_archive)
 ```
 
----
-
-### Label Suggestions
+#### Suggest Labels
 
 ```python
-suggestions = client.labels.suggest(
-    conversation_id=UUID("...")
+suggestions = await client.controller.suggest_labels(
+    conversation_id="..."
 )
 
 for suggestion in suggestions:
-    print(f"{suggestion.label} ({suggestion.confidence:.0%})")
-    print(f"  Reason: {suggestion.reason}")
-    print(f"  Existing: {suggestion.is_existing}")
+    print(f"{suggestion['label']} ({suggestion['confidence']:.0%})")
+    print(f"  Reason: {suggestion['reason']}")
 ```
 
 ---
 
-### Rebuild Embeddings
+### Bridge API (LLM Integration)
+
+#### Complete (Chat Completion)
 
 ```python
-# Trigger async rebuild
-client.embeddings.rebuild()
+response = await client.bridge.complete(
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Explain quantum computing"}
+    ],
+    model="gpt-4",
+    temperature=0.7,
+    max_tokens=1000
+)
 
-print("Embedding rebuild started (async)")
+print(response["choices"][0]["message"]["content"])
+print(f"Tokens used: {response['usage']['total_tokens']}")
 ```
 
-Use after changing embedding model or fixing corrupted embeddings.
-
----
-
-### Health & Stats
+#### Stream Complete (Streaming)
 
 ```python
-# Health check
-health = client.health()
+# Get async generator
+stream = await client.bridge.stream_complete(
+    messages=[
+        {"role": "user", "content": "Tell me a story"}
+    ],
+    model="gpt-4"
+)
+
+# Iterate over chunks
+async for chunk in stream:
+    if "choices" in chunk:
+        delta = chunk["choices"][0].get("delta", {})
+        content = delta.get("content", "")
+        if content:
+            print(content, end="", flush=True)
+```
+
+#### Embed (Text Embeddings)
+
+```python
+response = await client.bridge.embed(
+    input="Semantic search query text",
+    model="text-embedding-ada-002"
+)
+
+embedding = response["data"][0]["embedding"]
+print(f"Embedding dimension: {len(embedding)}")
+```
+
+#### Health Check
+
+```python
+health = await client.bridge.health()
 print(health["status"])  # "healthy" or "unhealthy"
-print(health["checks"]["database"])
-print(health["checks"]["chroma"])
+print(health["checks"])
+```
 
-# Metrics (Prometheus format)
-metrics = client.metrics()
-print(metrics)  # Raw Prometheus text
+---
+
+### MCP API (Model Context Protocol)
+
+#### Memory Stats
+
+```python
+# All conversations
+stats = await client.mcp.memory_stats({})
+
+# Filtered by labels
+stats = await client.mcp.memory_stats({
+    "labels": ["important", "work"],
+    "start_date": "2026-01-01T00:00:00Z",
+    "end_date": "2026-12-31T23:59:59Z"
+})
+
+print(f"Total: {stats['total_conversations']}")
+print(f"Total messages: {stats['total_messages']}")
+print(f"Labels: {stats['labels']}")
+```
+
+#### Memory Search
+
+```python
+results = await client.mcp.memory_search({
+    "query": "project architecture decisions",
+    "limit": 10,
+    "labels": ["technical"],
+    "min_importance": 7
+})
+
+for result in results["results"]:
+    print(f"{result['label']} (score: {result['score']:.2f})")
+    print(f"  {result['content'][:100]}...")
+```
+
+---
+
+### Unified Workflows
+
+#### 1. Store and Query
+
+Store conversation and immediately search:
+
+```python
+results = await client.store_and_query(
+    messages=[
+        {"role": "user", "content": "Discussed project timeline"},
+        {"role": "assistant", "content": "2 week sprint cycle"}
+    ],
+    query="timeline sprint",
+    label="Planning Meeting",
+    folder="/work/meetings"
+)
+
+print(f"Stored conversation and found {len(results)} related items")
+```
+
+#### 2. Complete with Context
+
+Assemble context from memory + generate LLM completion:
+
+```python
+response = await client.complete_with_context(
+    prompt="Continue our architecture discussion",
+    context_query="architecture microservices decisions",
+    model="gpt-4",
+    context_budget=4000,
+    temperature=0.7
+)
+
+print(response["choices"][0]["message"]["content"])
+```
+
+#### 3. Complete with Memory
+
+Search memory + use results directly in LLM prompt:
+
+```python
+response = await client.complete_with_memory(
+    prompt="Summarize our past discussions about:",
+    search_query="deployment strategies docker kubernetes",
+    model="gpt-4",
+    limit=5
+)
+
+print(response["choices"][0]["message"]["content"])
+```
+
+#### 4. Stream with Context
+
+Stream LLM response with assembled context:
+
+```python
+async for chunk in await client.stream_with_context(
+    prompt="Explain our deployment strategy in detail",
+    context_query="deployment infrastructure",
+    model="gpt-4",
+    context_budget=3000
+):
+    if "choices" in chunk:
+        content = chunk["choices"][0].get("delta", {}).get("content", "")
+        if content:
+            print(content, end="", flush=True)
+```
+
+#### 5. Health Check
+
+Check health of all services concurrently:
+
+```python
+health = await client.health_check()
+
+for service, status in health.items():
+    print(f"{service.capitalize()}: {status['status']}")
+    if status.get("error"):
+        print(f"  Error: {status['error']}")
 ```
 
 ---
@@ -471,113 +547,78 @@ print(metrics)  # Raw Prometheus text
 ## Error Handling
 
 ```python
-from sekha.exceptions import (
-    SekhaError,
-    AuthenticationError,
-    NotFoundError,
-    ValidationError,
-    RateLimitError,
-    ServerError
+from sekha import (
+    SekhaError,              # Base error
+    SekhaAPIError,           # API errors (4xx, 5xx)
+    SekhaAuthError,          # Authentication failures (401)
+    SekhaConnectionError,    # Connection/timeout errors
+    SekhaNotFoundError,      # Resource not found (404)
+    SekhaValidationError,    # Invalid input (400)
 )
 
 try:
-    conversation = client.conversations.get(UUID("..."))
-except NotFoundError:
+    conversation = await client.controller.get_conversation("...")
+except SekhaNotFoundError:
     print("Conversation not found")
-except AuthenticationError:
+except SekhaAuthError:
     print("Invalid API key")
-except RateLimitError as e:
-    print(f"Rate limited. Retry after {e.retry_after} seconds")
-except ServerError as e:
-    print(f"Server error: {e.message}")
+except SekhaConnectionError:
+    print("Controller unreachable")
+except SekhaAPIError as e:
+    print(f"API error: {e.message} (status: {e.status_code})")
 except SekhaError as e:
-    print(f"Unknown error: {e}")
+    print(f"Unexpected error: {e}")
 ```
 
-**Exception hierarchy:**
+**Exception Hierarchy:**
 
 ```
 SekhaError (base)
-├── ClientError (4xx)
-│   ├── AuthenticationError (401)
-│   ├── NotFoundError (404)
-│   ├── ValidationError (400)
-│   └── RateLimitError (429)
-└── ServerError (5xx)
+├── SekhaAPIError (4xx, 5xx)
+│   ├── SekhaAuthError (401)
+│   ├── SekhaNotFoundError (404)
+│   └── SekhaValidationError (400)
+└── SekhaConnectionError (timeout, network)
 ```
 
 ---
 
-## Async Client
+## Configuration
 
-### Usage
+### Environment Variables
 
-```python
-from sekha import AsyncSekhaClient
-import asyncio
-
-async def example():
-    async with AsyncSekhaClient(
-        base_url="http://localhost:8080",
-        api_key="your-key"
-    ) as client:
-        # All methods are async
-        conversation = await client.conversations.create(
-            label="Async Test",
-            messages=[{"role": "user", "content": "Hello"}]
-        )
-        
-        results = await client.query("test")
-        
-        # Concurrent requests
-        tasks = [
-            client.conversations.get(id1),
-            client.conversations.get(id2),
-            client.conversations.get(id3)
-        ]
-        conversations = await asyncio.gather(*tasks)
-
-asyncio.run(example())
+```bash
+# .env file
+SEKHA_CONTROLLER_URL=http://localhost:8080
+SEKHA_API_KEY=sk-your-api-key-here
+SEKHA_BRIDGE_URL=http://localhost:5001
+SEKHA_TIMEOUT=30.0
+SEKHA_MAX_RETRIES=3
 ```
 
-### Performance
-
-**Sync vs Async:**
-
 ```python
-import time
+from sekha import SekhaClient
+import os
 
-# Sync: Sequential (slow)
-start = time.time()
-for i in range(10):
-    client.query("test")
-print(f"Sync: {time.time() - start:.2f}s")  # ~3.0s
-
-# Async: Concurrent (fast)
-start = time.time()
-tasks = [client.query("test") for i in range(10)]
-await asyncio.gather(*tasks)
-print(f"Async: {time.time() - start:.2f}s")  # ~0.3s
-```
-
----
-
-## Advanced Usage
-
-### Custom Timeout
-
-```python
-# Per-client timeout
 client = SekhaClient(
-    base_url="http://localhost:8080",
-    api_key="key",
-    timeout=60  # 60 seconds
+    controller_url=os.getenv("SEKHA_CONTROLLER_URL"),
+    api_key=os.getenv("SEKHA_API_KEY"),
+    bridge_url=os.getenv("SEKHA_BRIDGE_URL"),
+    timeout=float(os.getenv("SEKHA_TIMEOUT", "30.0")),
+    max_retries=int(os.getenv("SEKHA_MAX_RETRIES", "3"))
 )
+```
 
-# Per-request timeout
-results = client.query(
-    "slow query",
-    _timeout=120  # Override for this request
+### Rate Limiting
+
+```python
+from sekha.types import ClientConfig
+
+config = ClientConfig(
+    base_url="http://localhost:8080",
+    api_key="sk-your-api-key",
+    rate_limit_requests=1000,  # Max requests per window
+    rate_limit_window=60.0     # Window in seconds
 )
 ```
 
@@ -585,36 +626,71 @@ results = client.query(
 
 ```python
 client = SekhaClient(
-    base_url="http://localhost:8080",
-    api_key="key",
-    max_retries=5,
-    retry_backoff=2.0  # Exponential backoff factor
+    controller_url="http://localhost:8080",
+    api_key="sk-your-api-key",
+    max_retries=5,        # Retry up to 5 times
+    timeout=60.0          # 60 second timeout
 )
 ```
 
-### Logging
+---
+
+## Type Safety
+
+### Type Hints
 
 ```python
-import logging
-
-# Enable SDK logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger("sekha")
-logger.setLevel(logging.DEBUG)
-
-# SDK will log:
-# - Request URLs and headers
-# - Response status codes
-# - Retry attempts
-# - Errors
+from sekha.types import (
+    # Core Models
+    Message,
+    MessageContent,
+    ContentPart,
+    Conversation,
+    ConversationStatus,
+    MessageRole,
+    
+    # Request Types
+    CreateConversationRequest,
+    QueryRequest,
+    ContextAssembleRequest,
+    PruneRequest,
+    
+    # Response Types
+    QueryResponse,
+    SearchResult,
+    PruneResponse,
+    SummaryResponse,
+    LabelSuggestion,
+    
+    # Enums
+    SummaryLevel,
+    PruneRecommendation,
+)
 ```
 
-### Streaming Responses
+### Type Guards
 
 ```python
-# Future: Stream large exports
-for chunk in client.export.stream(conversation_id):
-    process(chunk)
+from sekha.type_guards import (
+    is_string_content,
+    is_multi_modal_content,
+    is_valid_role,
+    extract_text,
+    extract_image_urls,
+    has_images,
+    has_text,
+)
+
+# Runtime validation
+if is_valid_role("user"):
+    message = {"role": "user", "content": "Hello"}
+
+# Extract text from content
+text = extract_text(message["content"])
+
+# Check for images
+if has_images(message["content"]):
+    urls = extract_image_urls(message["content"])
 ```
 
 ---
@@ -626,11 +702,11 @@ for chunk in client.export.stream(conversation_id):
 ```python
 from datetime import datetime
 
-standup = client.conversations.create(
-    label=f"Standup {datetime.now().strftime('%Y-%m-%d')}",
-    folder="/work/meetings/standup",
-    importance_score=5,
-    messages=[
+standup = await client.controller.create_conversation({
+    "label": f"Standup {datetime.now().strftime('%Y-%m-%d')}",
+    "folder": "/work/meetings/standup",
+    "importance_score": 5,
+    "messages": [
         {
             "role": "user",
             "content": """
@@ -647,7 +723,21 @@ standup = client.conversations.create(
             """
         }
     ]
+})
+```
+
+### AI-Powered Code Review
+
+```python
+# Search for past code review discussions
+response = await client.complete_with_memory(
+    prompt="Review this code for security issues:",
+    search_query="security code review best practices",
+    model="gpt-4",
+    limit=5
 )
+
+print(response["choices"][0]["message"]["content"])
 ```
 
 ### Weekly Review
@@ -655,42 +745,19 @@ standup = client.conversations.create(
 ```python
 from datetime import datetime, timedelta
 
-# Get last week's conversations
 week_ago = (datetime.now() - timedelta(days=7)).isoformat()
 
-results = client.query(
-    query="important decisions and action items",
-    filters={
-        "date_from": week_ago,
-        "importance_min": 7
-    }
+results = await client.controller.query(
+    query="important decisions and action items"
 )
 
-print(f"Found {len(results)} important conversations")
-for result in results:
-    print(f"- {result.label}")
-```
+# Filter last week's results
+recent = [
+    r for r in results["results"]
+    if r["timestamp"] >= week_ago
+]
 
-### Backup Conversations
-
-```python
-import json
-
-# Export all conversations
-conversations = client.conversations.list(page_size=100)
-
-backup = []
-for conv in conversations.results:
-    full_conv = client.conversations.get(conv.conversation_id)
-    backup.append({
-        "id": str(full_conv.id),
-        "label": full_conv.label,
-        "folder": full_conv.folder,
-        "created_at": full_conv.created_at.isoformat()
-    })
-
-with open("backup.json", "w") as f:
-    json.dump(backup, f, indent=2)
+print(f"Found {len(recent)} important conversations this week")
 ```
 
 ---
@@ -720,8 +787,8 @@ pytest
 # With coverage
 pytest --cov=sekha --cov-report=html
 
-# Specific test
-pytest tests/test_conversations.py::test_create
+# Specific test file
+pytest tests/test_unified_workflows.py
 ```
 
 ### Type Checking
@@ -730,11 +797,42 @@ pytest tests/test_conversations.py::test_create
 mypy sekha/
 ```
 
-### Linting
+### Linting and Formatting
 
 ```bash
-ruff check sekha/
+# Check formatting
 black --check sekha/
+ruff check sekha/
+
+# Auto-format
+black sekha/
+ruff check --fix sekha/
+```
+
+---
+
+## Migration from v0.1.x
+
+### Breaking Changes
+
+**v0.1.x (Old):**
+```python
+# Bridge and MCP were stubs
+client = SekhaClient(...)
+await client.bridge.complete(...)  # NotImplementedError
+await client.mcp.memory_stats({})  # NotImplementedError
+```
+
+**v0.2.0 (New):**
+```python
+# All clients fully implemented
+client = SekhaClient(...)
+await client.bridge.complete(...)  # ✅ Works!
+await client.mcp.memory_stats({})  # ✅ Works!
+
+# New: Convenience workflows
+await client.complete_with_memory(...)  # ✅ New!
+await client.health_check()            # ✅ New!
 ```
 
 ---
@@ -742,13 +840,18 @@ black --check sekha/
 ## Next Steps
 
 - **[JavaScript SDK](javascript-sdk.md)** - Node.js and browser client
-- **[REST API](../api-reference/rest-api.md)** - Full API reference
-- **[Integrations](../integrations/index.md)** - Use with VS Code, Claude, etc.
+- **[REST API Reference](../api-reference/rest-api.md)** - Complete API docs
+- **[MCP Tools](../api-reference/mcp-tools.md)** - Model Context Protocol
+- **[Integrations](../integrations/index.md)** - VS Code, Claude Desktop
+- **[Deployment](../deployment/index.md)** - Production deployment guide
 
 ---
 
-## Support
+## Resources
 
+- **GitHub:** [sekha-ai/sekha-python-sdk](https://github.com/sekha-ai/sekha-python-sdk)
 - **Issues:** [GitHub Issues](https://github.com/sekha-ai/sekha-python-sdk/issues)
+- **Changelog:** [CHANGELOG.md](https://github.com/sekha-ai/sekha-python-sdk/blob/main/CHANGELOG.md)
+- **PyPI:** Coming soon
 - **Discord:** [Join Community](https://discord.gg/gZb7U9deKH)
 - **Documentation:** [docs.sekha.dev](https://docs.sekha.dev)

@@ -1,44 +1,35 @@
 # JavaScript/TypeScript SDK
 
-Official JavaScript and TypeScript client library for Sekha Controller.
+Official JavaScript and TypeScript client library for Sekha Memory System.
 
 ## Overview
 
-The Sekha JavaScript SDK provides:
+The Sekha JavaScript SDK provides unified access to REST, MCP, and LLM Bridge APIs:
 
-- ✅ **Full REST API coverage** - All 19 endpoints
-- ✅ **TypeScript support** - Complete type definitions
+- ✅ **4 Client Interfaces** - Controller, MCP, Bridge, Unified
+- ✅ **Full REST API** - 19 endpoints with complete coverage  
+- ✅ **MCP Protocol** - 7 Model Context Protocol tools
+- ✅ **LLM Bridge** - Direct completions, embeddings, streaming
+- ✅ **TypeScript** - 50+ interfaces with complete type safety
+- ✅ **Multi-Modal** - Text + image message support
+- ✅ **Streaming** - Server-Sent Events for LLM completions
 - ✅ **Node.js & Browser** - Works in both environments
-- ✅ **Promise-based** - Modern async/await API
-- ✅ **Automatic retries** - Exponential backoff
-- ✅ **Error handling** - Rich error types
-- ✅ **Tree-shakeable** - Import only what you need
+- ✅ **Tree-shakeable** - ESM with selective imports
+- ✅ **Zero Dependencies** - Lightweight with no external deps
 
-**Status:** Beta - Ready for testing
+**Status:** v0.2.0 - Production Ready
 
 ---
 
 ## Installation
 
-### npm
+### npm (coming soon)
 
 ```bash
 npm install @sekha/sdk
 ```
 
-### yarn
-
-```bash
-yarn add @sekha/sdk
-```
-
-### pnpm
-
-```bash
-pnpm add @sekha/sdk
-```
-
-### From Source
+### From Source (current)
 
 ```bash
 git clone https://github.com/sekha-ai/sekha-js-sdk.git
@@ -51,555 +42,476 @@ npm run build
 
 ## Quick Start
 
-### Node.js
+### Unified Client (Recommended)
 
 ```typescript
 import { SekhaClient } from '@sekha/sdk';
 
-// Initialize
-const client = new SekhaClient({
-  baseUrl: 'http://localhost:8080',
-  apiKey: 'your-rest-api-key-here'
+// Initialize with all services
+const sekha = new SekhaClient({
+  controllerURL: 'http://localhost:8080',
+  bridgeURL: 'http://localhost:5001',
+  apiKey: 'sk-your-api-key'
 });
 
-// Create conversation
-const conversation = await client.conversations.create({
-  label: 'My First Conversation',
-  folder: '/work/projects',
+// One-line workflows
+const response = await sekha.completeWithMemory(
+  'Explain our TypeScript architecture',
+  'TypeScript discussion'
+);
+
+console.log(response.choices[0].message.content);
+```
+
+### Individual Clients
+
+```typescript
+import { MemoryController, MCPClient, BridgeClient } from '@sekha/sdk';
+
+// REST API client
+const controller = new MemoryController({
+  baseURL: 'http://localhost:8080',
+  apiKey: 'sk-your-api-key'
+});
+
+// MCP protocol client
+const mcp = new MCPClient({
+  baseURL: 'http://localhost:8080',
+  mcpApiKey: 'sk-your-mcp-key'
+});
+
+// LLM Bridge client
+const bridge = new BridgeClient({
+  baseURL: 'http://localhost:5001'
+});
+
+// Use individually
+const conversations = await controller.list();
+const stats = await mcp.memoryStats({ folder: '/work' });
+const completion = await bridge.complete({
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+```
+
+---
+
+## Core Concepts
+
+### 1. MemoryController - REST API
+
+Direct HTTP access to Sekha Controller for conversation management (19 endpoints).
+
+```typescript
+import { MemoryController } from '@sekha/sdk';
+
+const controller = new MemoryController({
+  baseURL: 'http://localhost:8080',
+  apiKey: 'sk-your-api-key'
+});
+
+// Store conversation
+const conversation = await controller.create({
+  label: 'Engineering Discussion',
+  folder: '/work/engineering',
   messages: [
-    { role: 'user', content: 'What is RAG?' },
-    { role: 'assistant', content: 'RAG stands for...' }
+    { role: 'user', content: 'How should we structure our API?' },
+    { role: 'assistant', content: 'Let me suggest a REST-first approach...' }
   ]
 });
 
-console.log(`Created: ${conversation.id}`);
+// Semantic search
+const results = await controller.query('API architecture discussion');
+console.log(`Found ${results.total} results`);
 
-// Search semantically
-const results = await client.query({
-  query: 'retrieval augmented generation',
-  limit: 5
-});
+// Full-text search
+const ftsResults = await controller.searchFTS('TypeScript');
 
-results.forEach(result => {
-  console.log(`${result.label}: ${result.score.toFixed(2)}`);
+// Assemble context for LLM
+const context = await controller.assembleContext({
+  query: 'Continue the API discussion',
+  context_budget: 4000,
+  preferred_labels: ['Engineering']
 });
 ```
 
-### Browser
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <script type="module">
-    import { SekhaClient } from 'https://esm.sh/@sekha/sdk';
-    
-    const client = new SekhaClient({
-      baseUrl: 'http://localhost:8080',
-      apiKey: 'your-key'
-    });
-    
-    const results = await client.query({ query: 'test' });
-    console.log(results);
-  </script>
-</head>
-</html>
-```
-
-### CommonJS
-
-```javascript
-const { SekhaClient } = require('@sekha/sdk');
-
-const client = new SekhaClient({
-  baseUrl: 'http://localhost:8080',
-  apiKey: 'your-key'
-});
-
-// All methods return Promises
-client.query({ query: 'test' })
-  .then(results => console.log(results))
-  .catch(err => console.error(err));
-```
+**All Methods:**
+- **CRUD**: `create()`, `list()`, `get()`, `update()`, `delete()`
+- **Search**: `query()`, `searchFTS()`, `count()`
+- **Context**: `assembleContext()`
+- **Management**: `pin()`, `archive()`, `updateLabel()`, `updateFolder()`
+- **AI Features**: `suggestLabel()`, `summarize()`
+- **Maintenance**: `getPruningSuggestions()`, `pruneExecute()`, `rebuildEmbeddings()`
+- **Export**: `export()`
+- **System**: `health()`, `getMetrics()`
 
 ---
 
-## API Reference
+### 2. MCPClient - Model Context Protocol
 
-### Client Initialization
+MCP protocol for standardized AI memory operations (7 tools).
+
+```typescript
+import { MCPClient } from '@sekha/sdk';
+
+const mcp = new MCPClient({
+  baseURL: 'http://localhost:8080',
+  mcpApiKey: 'sk-your-mcp-key'
+});
+
+// Store via MCP
+const result = await mcp.memoryStore({
+  label: 'Meeting Notes',
+  folder: '/meetings',
+  messages: [/* ... */]
+});
+
+// Search via MCP
+const searchResult = await mcp.memorySearch({
+  query: 'quarterly planning',
+  limit: 10
+});
+
+// Get statistics
+const stats = await mcp.memoryStats({
+  folder: '/work',
+  label: 'Engineering'
+});
+
+console.log(`Total: ${stats.total_conversations}`);
+console.log(`Messages: ${stats.total_messages}`);
+```
+
+**All Tools:**
+- `memoryStore()` - Store conversations
+- `memorySearch()` - Semantic search
+- `memoryGetContext()` - Retrieve context
+- `memoryUpdate()` - Update conversations
+- `memoryPrune()` - Get pruning suggestions
+- `memoryExport()` - Export data
+- `memoryStats()` - Get statistics
+
+---
+
+### 3. BridgeClient - LLM Operations
+
+Direct access to Sekha LLM Bridge for completions and embeddings (7 methods).
+
+```typescript
+import { BridgeClient } from '@sekha/sdk';
+
+const bridge = new BridgeClient({
+  baseURL: 'http://localhost:5001'
+});
+
+// Chat completion
+const completion = await bridge.complete({
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'Explain TypeScript generics' }
+  ],
+  temperature: 0.7
+});
+
+console.log(completion.choices[0].message.content);
+
+// Streaming completion
+for await (const chunk of bridge.streamComplete({ messages })) {
+  const content = chunk.choices[0]?.delta?.content;
+  if (content) {
+    process.stdout.write(content);
+  }
+}
+
+// Generate embeddings
+const embedding = await bridge.embed({
+  text: 'This text will be embedded',
+  model: 'text-embedding-3-small'
+});
+
+// Generate summary
+const summary = await bridge.summarize({
+  text: 'Long text to summarize...',
+  level: 'brief'
+});
+```
+
+**All Methods:**
+- `complete()` - Chat completions (OpenAI-compatible)
+- `streamComplete()` - Streaming completions with SSE
+- `embed()` - Generate embeddings
+- `summarize()` - Hierarchical text summaries
+- `extract()` - Entity extraction
+- `score()` - Importance scoring
+- `health()` - Health check with provider status
+
+---
+
+### 4. SekhaClient - Unified Interface
+
+Combines all three clients with high-level convenience methods (6 workflows).
 
 ```typescript
 import { SekhaClient } from '@sekha/sdk';
 
-const client = new SekhaClient({
-  baseUrl: 'http://localhost:8080',  // Required
-  apiKey: 'your-api-key',             // Required
-  timeout: 30000,                     // Request timeout (ms)
-  maxRetries: 3,                      // Retry failed requests
-  retryDelay: 1000,                   // Initial retry delay (ms)
-  headers: {}                         // Additional headers
+const sekha = new SekhaClient({
+  controllerURL: 'http://localhost:8080',
+  bridgeURL: 'http://localhost:5001',
+  apiKey: 'sk-your-api-key'
 });
+
+// Access any client directly
+await sekha.controller.list();
+await sekha.mcp.memoryStats({});
+await sekha.bridge.complete({ messages });
+
+// High-level workflows:
+
+// 1. Store conversation then search
+const { conversation, results } = await sekha.storeAndQuery(
+  messages,
+  'search query',
+  { label: 'Engineering', folder: '/work' }
+);
+
+// 2. LLM completion with assembled context
+const response = await sekha.completeWithContext(
+  'What were the main takeaways from our meeting?',
+  'meeting notes',
+  {
+    context_budget: 4000,
+    preferred_labels: ['Meetings'],
+    temperature: 0.7
+  }
+);
+
+// 3. LLM completion with search results
+const response2 = await sekha.completeWithMemory(
+  'Summarize our TypeScript discussions',
+  'TypeScript architecture',
+  { limit: 5 }
+);
+
+// 4. Generate custom embedding and store
+const stored = await sekha.embedAndStore(
+  messages,
+  {
+    label: 'Custom Embedded',
+    folder: '/custom',
+    model: 'text-embedding-3-large'
+  }
+);
+
+// 5. Streaming with context
+for await (const chunk of sekha.streamWithContext(
+  'Continue our discussion',
+  'previous conversation'
+)) {
+  process.stdout.write(chunk.choices[0]?.delta?.content || '');
+}
+
+// 6. Check all services
+const health = await sekha.healthCheck();
+console.log(`Controller: ${health.controller.status}`);
+console.log(`Bridge: ${health.bridge.status}`);
 ```
-
-**Options:**
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `baseUrl` | string | **required** | Sekha Controller URL |
-| `apiKey` | string | **required** | REST API key (min 32 chars) |
-| `timeout` | number | `30000` | Request timeout in milliseconds |
-| `maxRetries` | number | `3` | Number of retries for failed requests |
-| `retryDelay` | number | `1000` | Initial retry delay (exponential backoff) |
-| `headers` | object | `{}` | Additional HTTP headers |
 
 ---
 
-### Conversations
+## Advanced Features
 
-#### Create Conversation
+### Multi-Modal Messages (Text + Images)
 
 ```typescript
-const conversation = await client.conversations.create({
-  label: 'API Design Discussion',
-  folder: '/work/engineering',
-  importanceScore: 8,
-  messages: [
-    {
-      role: 'user',
-      content: 'How should we design the REST API?'
-    },
-    {
-      role: 'assistant',
-      content: 'Consider RESTful principles...'
+import { Message } from '@sekha/sdk';
+
+// Vision message with image
+const visionMessage: Message = {
+  role: 'user',
+  content: [
+    { type: 'text', text: 'What is in this image?' },
+    { 
+      type: 'image_url',
+      image_url: {
+        url: 'https://example.com/chart.png',
+        detail: 'high'  // 'low' | 'high' | 'auto'
+      }
     }
   ]
+};
+
+// Store vision conversation
+await controller.create({
+  label: 'Chart Analysis',
+  folder: '/vision',
+  messages: [visionMessage]
 });
 
-console.log(conversation.id);          // UUID
-console.log(conversation.label);       // "API Design Discussion"
-console.log(conversation.createdAt);   // Date object
-```
-
-**Type:**
-
-```typescript
-interface CreateConversationRequest {
-  label: string;
-  folder?: string;
-  importanceScore?: number;  // 1-10
-  messages: Message[];
-}
-
-interface Message {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  metadata?: Record<string, any>;
-}
-
-interface Conversation {
-  id: string;              // UUID
-  label: string;
-  folder: string;
-  status: 'active' | 'archived';
-  messageCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-```
-
----
-
-#### Get Conversation
-
-```typescript
-const conversation = await client.conversations.get(
-  '550e8400-e29b-41d4-a716-446655440000'
-);
-
-console.log(conversation.label);
-console.log(conversation.messageCount);
-```
-
----
-
-#### List Conversations
-
-```typescript
-const response = await client.conversations.list({
-  folder: '/work',
-  pinned: true,
-  archived: false,
-  page: 1,
-  pageSize: 50
-});
-
-console.log(`Total: ${response.total}`);
-response.results.forEach(conv => {
-  console.log(`${conv.label} - ${conv.folder}`);
+// Use with bridge
+const analysis = await bridge.complete({
+  messages: [visionMessage]
 });
 ```
 
-**Parameters:**
+### Type Guards & Utilities
 
 ```typescript
-interface ListConversationsParams {
-  label?: string;
-  folder?: string;
-  pinned?: boolean;
-  archived?: boolean;
-  page?: number;        // Default: 1
-  pageSize?: number;    // Default: 50, Max: 100
+import {
+  isMultiModalContent,
+  extractText,
+  extractImageUrls,
+  hasImages,
+  isValidStatus
+} from '@sekha/sdk';
+
+const message: Message = { /* ... */ };
+
+// Check content type
+if (isMultiModalContent(message.content)) {
+  const text = extractText(message.content);
+  const images = extractImageUrls(message.content);
+  console.log(`Text: ${text}`);
+  console.log(`Images: ${images.length}`);
 }
 
-interface ListConversationsResponse {
-  results: Conversation[];
-  total: number;
-  page: number;
-  pageSize: number;
+// Check if message has images
+if (hasImages(message)) {
+  console.log('Message contains images');
+}
+
+// Validate conversation status
+if (isValidStatus(conversation.status)) {
+  // TypeScript knows: status is 'active' | 'archived' | 'pinned'
 }
 ```
 
----
-
-#### Update Label/Folder
+### Streaming with Server-Sent Events
 
 ```typescript
-// Update label and folder
-await client.conversations.updateLabel(conversationId, {
-  label: 'Updated Label',
-  folder: '/new/folder'
-});
-
-// Update folder only
-await client.conversations.updateFolder(
-  conversationId,
-  '/work/archived'
-);
-```
-
----
-
-#### Pin/Archive
-
-```typescript
-// Pin (sets importance to 10)
-await client.conversations.pin(conversationId);
-
-// Unpin
-await client.conversations.unpin(conversationId);
-
-// Archive
-await client.conversations.archive(conversationId);
-
-// Unarchive
-await client.conversations.unarchive(conversationId);
-```
-
----
-
-#### Delete Conversation
-
-```typescript
-await client.conversations.delete(conversationId);
-```
-
----
-
-#### Count Conversations
-
-```typescript
-// Count all
-const total = await client.conversations.count();
-
-// Count by label
-const count = await client.conversations.count({ label: 'API Design' });
-
-// Count by folder
-const count = await client.conversations.count({ folder: '/work/engineering' });
-```
-
----
-
-### Search & Query
-
-#### Semantic Query
-
-```typescript
-const results = await client.query({
-  query: 'How to implement authentication?',
-  limit: 10,
-  filters: {
-    folder: '/work/engineering',
-    importanceMin: 7,
-    dateFrom: '2026-01-01T00:00:00Z'
+// Stream to console
+for await (const chunk of bridge.streamComplete({
+  messages: [{ role: 'user', content: 'Write a story' }],
+  stream: true
+})) {
+  const delta = chunk.choices[0]?.delta;
+  if (delta?.content) {
+    process.stdout.write(delta.content);
   }
-});
-
-results.forEach(result => {
-  console.log(`[${result.score.toFixed(2)}] ${result.label}`);
-  console.log(`  Folder: ${result.folder}`);
-  console.log(`  Content: ${result.content.substring(0, 100)}...`);
-});
-```
-
-**Type:**
-
-```typescript
-interface QueryRequest {
-  query: string;
-  limit?: number;       // Default: 10
-  offset?: number;      // Default: 0
-  filters?: QueryFilters;
 }
 
-interface QueryFilters {
-  folder?: string;
-  label?: string;
-  importanceMin?: number;
-  importanceMax?: number;
-  dateFrom?: string;    // ISO 8601
-  dateTo?: string;      // ISO 8601
+// Collect full response
+let fullResponse = '';
+for await (const chunk of bridge.streamComplete({ messages })) {
+  const content = chunk.choices[0]?.delta?.content || '';
+  fullResponse += content;
 }
-
-interface SearchResult {
-  conversationId: string;
-  messageId: string;
-  score: number;        // 0-1
-  content: string;
-  label: string;
-  folder: string;
-  timestamp: Date;
-  metadata?: Record<string, any>;
-}
+console.log('\nComplete response:', fullResponse);
 ```
 
 ---
 
-#### Full-Text Search
+## Complete API Reference
 
-```typescript
-const results = await client.search.fulltext({
-  query: 'authentication oauth jwt',
-  limit: 20
-});
+### MemoryController (REST API - 19 Endpoints)
 
-results.forEach(result => {
-  console.log(result.content);
-});
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `create()` | POST `/api/v1/conversations` | Store conversation |
+| `list()` | GET `/api/v1/conversations` | List conversations (paginated) |
+| `get()` | GET `/api/v1/conversations/:id` | Get single conversation |
+| `update()` | PUT `/api/v1/conversations/:id` | Update conversation |
+| `delete()` | DELETE `/api/v1/conversations/:id` | Delete conversation |
+| `query()` | POST `/api/v1/query` | Semantic search |
+| `searchFTS()` | POST `/api/v1/search/fts` | Full-text search |
+| `count()` | GET `/api/v1/conversations/count` | Count conversations |
+| `assembleContext()` | POST `/api/v1/context/assemble` | Assemble LLM context |
+| `pin()` | PUT `/api/v1/conversations/:id/pin` | Pin conversation |
+| `archive()` | PUT `/api/v1/conversations/:id/archive` | Archive conversation |
+| `updateLabel()` | PUT `/api/v1/conversations/:id/label` | Update label |
+| `updateFolder()` | PUT `/api/v1/conversations/:id/folder` | Update folder |
+| `suggestLabel()` | POST `/api/v1/labels/suggest` | AI label suggestions |
+| `summarize()` | POST `/api/v1/summarize` | Generate summary |
+| `getPruningSuggestions()` | POST `/api/v1/prune/dry-run` | Get prune suggestions |
+| `pruneExecute()` | POST `/api/v1/prune/execute` | Execute pruning |
+| `rebuildEmbeddings()` | POST `/api/v1/rebuild-embeddings` | Rebuild embeddings |
+| `export()` | POST `/api/v1/export` | Export conversations |
+| `health()` | GET `/health` | Health check |
+| `getMetrics()` | GET `/metrics` | System metrics |
 
----
+### MCPClient (MCP Protocol - 7 Tools)
 
-### Context Assembly
+| Tool | Description |
+|------|-------------|
+| `memoryStore()` | Store conversation via MCP |
+| `memorySearch()` | Semantic search via MCP |
+| `memoryGetContext()` | Get conversation context |
+| `memoryUpdate()` | Update conversation fields |
+| `memoryPrune()` | Get pruning suggestions |
+| `memoryExport()` | Export conversations |
+| `memoryStats()` | Get statistics by folder/label |
 
-```typescript
-const context = await client.context.assemble({
-  query: 'Continue our API design discussion',
-  preferredLabels: ['API Design', 'Architecture'],
-  contextBudget: 8000,  // Max tokens
-  excludedFolders: ['/personal']
-});
+### BridgeClient (LLM Bridge - 7 Methods)
 
-// Use in LLM prompt
-const messages = [
-  { role: 'system', content: 'You are a helpful assistant.' },
-  ...context,  // Insert assembled context
-  { role: 'user', content: 'What should we do next?' }
-];
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `complete()` | POST `/v1/chat/completions` | Chat completions |
+| `streamComplete()` | POST `/v1/chat/completions` | Streaming completions |
+| `embed()` | POST `/api/v1/embed` | Generate embeddings |
+| `summarize()` | POST `/api/v1/summarize` | Text summarization |
+| `extract()` | POST `/api/v1/extract` | Entity extraction |
+| `score()` | POST `/api/v1/score` | Importance scoring |
+| `health()` | GET `/health` | Health check |
 
-**Returns:** `Message[]` ready for LLM input
+### SekhaClient (Unified - 6 Workflows)
 
----
-
-### Summarization
-
-```typescript
-// Daily summary
-const summary = await client.summarize({
-  conversationId,
-  level: 'daily'
-});
-
-console.log(summary.summary);
-console.log(summary.generatedAt);
-
-// Weekly summary
-const weeklySummary = await client.summarize({
-  conversationId,
-  level: 'weekly'
-});
-
-// Monthly summary
-const monthlySummary = await client.summarize({
-  conversationId,
-  level: 'monthly'
-});
-```
-
-**Levels:** `'daily'`, `'weekly'`, `'monthly'`
-
----
-
-### Pruning
-
-#### Dry Run
-
-```typescript
-const suggestions = await client.prune.dryRun({
-  thresholdDays: 90
-});
-
-console.log(`Found ${suggestions.total} candidates for pruning`);
-
-suggestions.suggestions.forEach(suggestion => {
-  console.log(suggestion.conversationLabel);
-  console.log(`  Last accessed: ${suggestion.lastAccessed}`);
-  console.log(`  Importance: ${suggestion.importanceScore}`);
-  console.log(`  Recommendation: ${suggestion.recommendation}`);
-});
-```
-
-**Type:**
-
-```typescript
-interface PruningSuggestion {
-  conversationId: string;
-  conversationLabel: string;
-  lastAccessed: Date;
-  messageCount: number;
-  tokenEstimate: number;
-  importanceScore: number;
-  preview: string;
-  recommendation: 'DELETE' | 'ARCHIVE';
-}
-
-interface PruneResponse {
-  suggestions: PruningSuggestion[];
-  total: number;
-}
-```
-
----
-
-#### Execute Pruning
-
-```typescript
-// Archive low-priority conversations
-const toArchive = suggestions.suggestions
-  .filter(s => s.importanceScore <= 3)
-  .map(s => s.conversationId);
-
-await client.prune.execute(toArchive);
-```
-
----
-
-### Label Suggestions
-
-```typescript
-const suggestions = await client.labels.suggest({
-  conversationId
-});
-
-suggestions.forEach(suggestion => {
-  console.log(`${suggestion.label} (${(suggestion.confidence * 100).toFixed(0)}%)`);
-  console.log(`  Reason: ${suggestion.reason}`);
-  console.log(`  Existing: ${suggestion.isExisting}`);
-});
-```
-
----
-
-### Rebuild Embeddings
-
-```typescript
-// Trigger async rebuild
-await client.embeddings.rebuild();
-
-console.log('Embedding rebuild started (async)');
-```
-
----
-
-### Health & Stats
-
-```typescript
-// Health check
-const health = await client.health();
-console.log(health.status);  // 'healthy' or 'unhealthy'
-console.log(health.checks.database);
-console.log(health.checks.chroma);
-
-// Metrics (Prometheus format)
-const metrics = await client.metrics();
-console.log(metrics);  // Raw Prometheus text
-```
+| Method | Description |
+|--------|-------------|
+| `storeAndQuery()` | Store conversation then search |
+| `completeWithContext()` | LLM completion with assembled context |
+| `completeWithMemory()` | LLM completion with search results |
+| `embedAndStore()` | Generate embedding then store |
+| `streamWithContext()` | Streaming completion with context |
+| `healthCheck()` | Check all services simultaneously |
 
 ---
 
 ## Error Handling
 
 ```typescript
-import {
-  SekhaError,
-  AuthenticationError,
-  NotFoundError,
-  ValidationError,
-  RateLimitError,
-  ServerError
-} from '@sekha/sdk';
+import { SekhaError } from '@sekha/sdk';
 
 try {
-  const conversation = await client.conversations.get(conversationId);
+  const results = await controller.query('search');
 } catch (error) {
-  if (error instanceof NotFoundError) {
-    console.error('Conversation not found');
-  } else if (error instanceof AuthenticationError) {
-    console.error('Invalid API key');
-  } else if (error instanceof RateLimitError) {
-    console.error(`Rate limited. Retry after ${error.retryAfter}s`);
-  } else if (error instanceof ServerError) {
-    console.error(`Server error: ${error.message}`);
-  } else if (error instanceof SekhaError) {
-    console.error(`Unknown error: ${error.message}`);
-  } else {
-    throw error;
+  if (error instanceof SekhaError) {
+    console.error(`API Error: ${error.message}`);
+    console.error(`Status: ${error.statusCode}`);
+    console.error(`Details:`, error.details);
   }
 }
-```
-
-**Exception hierarchy:**
-
-```
-SekhaError (base)
-├── ClientError (4xx)
-│   ├── AuthenticationError (401)
-│   ├── NotFoundError (404)
-│   ├── ValidationError (400)
-│   └── RateLimitError (429)
-└── ServerError (5xx)
 ```
 
 ---
 
 ## TypeScript Support
 
-### Full Type Definitions
+### Full Type Definitions (50+ interfaces)
 
 ```typescript
 import type {
+  MemoryController,
+  MCPClient,
+  BridgeClient,
   SekhaClient,
   Conversation,
   Message,
+  MessageContent,
+  ContentPart,
   SearchResult,
-  QueryRequest,
-  QueryFilters,
-  PruningSuggestion,
-  SummaryLevel
+  QueryResponse,
+  PruningSuggestion
 } from '@sekha/sdk';
 
-// All types are exported and documented
+// All types are exported and fully documented
 const query: QueryRequest = {
   query: 'test',
   limit: 10,
@@ -610,200 +522,105 @@ const query: QueryRequest = {
 };
 ```
 
-### Generic Methods
+---
 
-```typescript
-// Type-safe response
-const conversation: Conversation = await client.conversations.create({
-  label: 'Test',
-  messages: []
-});
+## Browser Usage
 
-// Typed filters
-const results: SearchResult[] = await client.query({
-  query: 'test',
-  filters: {
-    importanceMin: 7  // TypeScript validates this is a number
-  }
-});
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sekha SDK Browser Example</title>
+</head>
+<body>
+  <script type="module">
+    // Use from CDN (when published)
+    import { SekhaClient } from 'https://unpkg.com/@sekha/sdk';
+    
+    const sekha = new SekhaClient({
+      controllerURL: 'http://localhost:8080',
+      apiKey: 'sk-your-api-key'
+    });
+    
+    const response = await sekha.controller.query('search query');
+    console.log('Results:', response);
+  </script>
+</body>
+</html>
 ```
 
 ---
 
-## Advanced Usage
+## Migration from v0.1.0
 
-### Custom Timeout
+### Breaking Changes
 
+**Response Types:**
 ```typescript
-// Per-client timeout
-const client = new SekhaClient({
-  baseUrl: 'http://localhost:8080',
-  apiKey: 'key',
-  timeout: 60000  // 60 seconds
-});
+// BEFORE (v0.1.0)
+const conversations = await controller.list();
 
-// Per-request timeout (future)
-const results = await client.query({
-  query: 'slow query',
-  _timeout: 120000  // 120 seconds
-});
+// AFTER (v0.2.0)
+const response = await controller.list();
+const conversations = response.results;
+console.log(`Total: ${response.total}`);
 ```
 
-### Retry Configuration
-
+**Type Definitions:**
 ```typescript
-const client = new SekhaClient({
-  baseUrl: 'http://localhost:8080',
-  apiKey: 'key',
-  maxRetries: 5,
-  retryDelay: 2000  // 2 seconds initial delay
-});
+// BEFORE
+interface Conversation {
+  folder?: string;  // Optional
+  messageCount?: number;  // camelCase
+}
+
+// AFTER
+interface Conversation {
+  folder: string;  // Required!
+  message_count: number;  // snake_case
+}
 ```
 
-### Custom Headers
-
-```typescript
-const client = new SekhaClient({
-  baseUrl: 'http://localhost:8080',
-  apiKey: 'key',
-  headers: {
-    'X-Custom-Header': 'value',
-    'User-Agent': 'MyApp/1.0'
-  }
-});
-```
-
-### Axios Instance Access
-
-```typescript
-// Access underlying axios instance
-client._axios.interceptors.request.use(config => {
-  console.log(`Request: ${config.method} ${config.url}`);
-  return config;
-});
-
-client._axios.interceptors.response.use(response => {
-  console.log(`Response: ${response.status}`);
-  return response;
-});
-```
+**New Features:**
+- Use `BridgeClient` for LLM operations
+- Use `MCPClient` for MCP protocol
+- Use `SekhaClient` for unified workflows
+- Multi-modal messages (text + images)
+- Streaming completions
+- Type guards and utilities
 
 ---
 
 ## Examples
 
-### Store Daily Standup
-
-```typescript
-const standup = await client.conversations.create({
-  label: `Standup ${new Date().toISOString().split('T')[0]}`,
-  folder: '/work/meetings/standup',
-  importanceScore: 5,
-  messages: [
-    {
-      role: 'user',
-      content: `
-        Yesterday:
-        - Fixed authentication bug
-        - Reviewed PR #234
-        
-        Today:
-        - Implement rate limiting
-        - Update documentation
-        
-        Blockers:
-        - Waiting on database migration approval
-      `
-    }
-  ]
-});
-```
-
-### Weekly Review
-
-```typescript
-// Get last week's conversations
-const weekAgo = new Date();
-weekAgo.setDate(weekAgo.getDate() - 7);
-
-const results = await client.query({
-  query: 'important decisions and action items',
-  filters: {
-    dateFrom: weekAgo.toISOString(),
-    importanceMin: 7
-  }
-});
-
-console.log(`Found ${results.length} important conversations`);
-results.forEach(result => {
-  console.log(`- ${result.label}`);
-});
-```
-
-### Backup Conversations
-
-```typescript
-import * as fs from 'fs';
-
-// Export all conversations
-const conversations = await client.conversations.list({ pageSize: 100 });
-
-const backup = [];
-for (const conv of conversations.results) {
-  const fullConv = await client.conversations.get(conv.id);
-  backup.push({
-    id: fullConv.id,
-    label: fullConv.label,
-    folder: fullConv.folder,
-    createdAt: fullConv.createdAt
-  });
-}
-
-fs.writeFileSync('backup.json', JSON.stringify(backup, null, 2));
-```
-
 ### React Integration
 
 ```typescript
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { SekhaClient } from '@sekha/sdk';
 
-const client = new SekhaClient({
-  baseUrl: 'http://localhost:8080',
-  apiKey: process.env.SEKHA_API_KEY!
+const sekha = new SekhaClient({
+  controllerURL: 'http://localhost:8080',
+  apiKey: process.env.REACT_APP_SEKHA_KEY!
 });
 
 function SearchComponent() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
 
   const handleSearch = async () => {
-    setLoading(true);
-    try {
-      const searchResults = await client.query({ query, limit: 10 });
-      setResults(searchResults);
-    } catch (error) {
-      console.error('Search failed:', error);
-    } finally {
-      setLoading(false);
-    }
+    const response = await sekha.controller.query(query);
+    setResults(response.results);
   };
 
   return (
     <div>
-      <input 
-        value={query} 
-        onChange={e => setQuery(e.target.value)}
-        placeholder="Search..."
-      />
-      <button onClick={handleSearch} disabled={loading}>
-        {loading ? 'Searching...' : 'Search'}
-      </button>
+      <input value={query} onChange={e => setQuery(e.target.value)} />
+      <button onClick={handleSearch}>Search</button>
       
       <ul>
         {results.map(result => (
-          <li key={result.messageId}>
+          <li key={result.conversation_id}>
             <strong>{result.label}</strong> ({result.score.toFixed(2)})
             <p>{result.content.substring(0, 200)}...</p>
           </li>
@@ -812,46 +629,6 @@ function SearchComponent() {
     </div>
   );
 }
-```
-
-### Express.js API
-
-```typescript
-import express from 'express';
-import { SekhaClient } from '@sekha/sdk';
-
-const app = express();
-app.use(express.json());
-
-const sekha = new SekhaClient({
-  baseUrl: 'http://localhost:8080',
-  apiKey: process.env.SEKHA_API_KEY!
-});
-
-// Search endpoint
-app.post('/api/search', async (req, res) => {
-  try {
-    const { query } = req.body;
-    const results = await sekha.query({ query, limit: 10 });
-    res.json({ results });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Save conversation endpoint
-app.post('/api/conversations', async (req, res) => {
-  try {
-    const conversation = await sekha.conversations.create(req.body);
-    res.json({ conversation });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
-});
 ```
 
 ---
@@ -867,114 +644,21 @@ cd sekha-js-sdk
 # Install dependencies
 npm install
 
-# Build
+# Build (ESM + CJS)
 npm run build
 
-# Build types
-npm run build:types
-```
-
-### Running Tests
-
-```bash
-# Run all tests
+# Run tests
 npm test
 
-# With coverage
+# Run tests with coverage
 npm run test:coverage
 
-# Specific test
-npm test -- conversations.test.ts
-
-# Watch mode
-npm test -- --watch
-```
-
-### Type Checking
-
-```bash
-npm run type-check
-```
-
-### Linting
-
-```bash
+# Lint
 npm run lint
+
+# Fix lint issues
 npm run lint:fix
 ```
-
----
-
-## Browser Support
-
-### Module Formats
-
-- **ESM** - `dist/index.esm.js`
-- **CommonJS** - `dist/index.cjs.js`
-- **UMD** - `dist/index.umd.js`
-
-### CDN Usage
-
-```html
-<!-- Via esm.sh -->
-<script type="module">
-  import { SekhaClient } from 'https://esm.sh/@sekha/sdk@latest';
-</script>
-
-<!-- Via unpkg -->
-<script type="module">
-  import { SekhaClient } from 'https://unpkg.com/@sekha/sdk@latest/dist/index.esm.js';
-</script>
-
-<!-- UMD (global) -->
-<script src="https://unpkg.com/@sekha/sdk@latest/dist/index.umd.js"></script>
-<script>
-  const client = new Sekha.SekhaClient({
-    baseUrl: 'http://localhost:8080',
-    apiKey: 'your-key'
-  });
-</script>
-```
-
-### CORS Configuration
-
-If using from browser, ensure Sekha Controller allows CORS:
-
-```toml
-# config.toml
-[api]
-cors_enabled = true
-cors_origins = ["http://localhost:3000", "https://myapp.com"]
-```
-
----
-
-## Migration from v0.x
-
-### Breaking Changes
-
-```typescript
-// v0.x
-const results = await client.search({ query: 'test' });
-
-// v1.x (current)
-const results = await client.query({ query: 'test' });
-```
-
-```typescript
-// v0.x
-await client.conversations.update(id, { label: 'New' });
-
-// v1.x
-await client.conversations.updateLabel(id, { label: 'New' });
-```
-
-### Upgrade Guide
-
-1. Update package: `npm install @sekha/sdk@latest`
-2. Rename `search()` → `query()`
-3. Update `conversations.update()` → `conversations.updateLabel()`
-4. Check TypeScript errors and fix
 
 ---
 
@@ -982,12 +666,14 @@ await client.conversations.updateLabel(id, { label: 'New' });
 
 - **[Python SDK](python-sdk.md)** - Python client library
 - **[REST API](../api-reference/rest-api.md)** - Full API reference
-- **[Integrations](../integrations/index.md)** - Use with React, Vue, etc.
+- **[MCP Protocol](../api-reference/mcp.md)** - MCP documentation
+- **[Examples](../examples/)** - More code examples
 
 ---
 
 ## Support
 
+- **Repository:** [sekha-js-sdk](https://github.com/sekha-ai/sekha-js-sdk)
 - **Issues:** [GitHub Issues](https://github.com/sekha-ai/sekha-js-sdk/issues)
 - **Discord:** [Join Community](https://discord.gg/gZb7U9deKH)
 - **Documentation:** [docs.sekha.dev](https://docs.sekha.dev)

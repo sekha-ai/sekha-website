@@ -131,6 +131,7 @@ nav:
     - getting-started/index.md
     - Quickstart: getting-started/quickstart.md
     - Installation: getting-started/installation.md
+    - Python Packages: getting-started/python-installation.md
     - Configuration: getting-started/configuration.md
     - First Conversation: getting-started/first-conversation.md
   

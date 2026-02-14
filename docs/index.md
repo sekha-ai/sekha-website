@@ -161,6 +161,7 @@ Sekha sits **between** you and any LLM, capturing every interaction and intellig
     - 🔧 **Proxy** (optional) - Transparent capture layer
 
 [:octicons-arrow-right-24: Full Installation Guide](getting-started/installation.md){ .md-button .md-button--primary }
+[:material-package: Python Packages](getting-started/python-installation.md){ .md-button }
 
 ---
 
@@ -242,18 +243,25 @@ Sekha is built for **production use** with world-class engineering:
 
 Sekha is built as a modular system:
 
-| Repository | Purpose | Language | Status |
-|------------|---------|----------|--------|
-| [sekha-controller](https://github.com/sekha-ai/sekha-controller) | Memory orchestration engine | Rust | ✅ Production |
-| [sekha-llm-bridge](https://github.com/sekha-ai/sekha-llm-bridge) | LLM adapter (REQUIRED) | Python | ✅ Production |
-| [sekha-proxy](https://github.com/sekha-ai/sekha-proxy) | Transparent capture (OPTIONAL) | Python | ✅ Production |
-| [sekha-docker](https://github.com/sekha-ai/sekha-docker) | Deployment configurations | Docker | ✅ Production |
-| [sekha-mcp](https://github.com/sekha-ai/sekha-mcp) | MCP protocol server | Python | ✅ Production |
-| [sekha-python-sdk](https://github.com/sekha-ai/sekha-python-sdk) | Python client library | Python | 🔜 Publishing |
-| [sekha-js-sdk](https://github.com/sekha-ai/sekha-js-sdk) | JavaScript/TypeScript SDK | TypeScript | 🔜 Publishing |
-| [sekha-vscode](https://github.com/sekha-ai/sekha-vscode) | VS Code extension | TypeScript | 🚧 Beta |
-| [sekha-cli](https://github.com/sekha-ai/sekha-cli) | Command-line interface | Go | 🚧 Beta |
-| [sekha-obsidian](https://github.com/sekha-ai/sekha-obsidian) | Obsidian note integration | TypeScript | 🚧 Beta |
+| Repository | Purpose | Language | Status | Install |
+|------------|---------|----------|--------|---------|
+| [sekha-controller](https://github.com/sekha-ai/sekha-controller) | Memory orchestration engine | Rust | ✅ Production | Docker/Source |
+| [sekha-llm-bridge](https://github.com/sekha-ai/sekha-llm-bridge) | LLM adapter (REQUIRED) | Python | ✅ Production | PyPI/Docker |
+| [sekha-proxy](https://github.com/sekha-ai/sekha-proxy) | Transparent capture (OPTIONAL) | Python | ✅ Production | Docker/Source |
+| [sekha-docker](https://github.com/sekha-ai/sekha-docker) | Deployment configurations | Docker | ✅ Production | Docker |
+| [sekha-mcp](https://github.com/sekha-ai/sekha-mcp) | MCP protocol server | Python | ✅ Production | PyPI/Docker |
+| [sekha-python-sdk](https://github.com/sekha-ai/sekha-python-sdk) | Python client library | Python | 🔜 Publishing | PyPI |
+| [sekha-js-sdk](https://github.com/sekha-ai/sekha-js-sdk) | JavaScript/TypeScript SDK | TypeScript | 🔜 Publishing | npm |
+| [sekha-vscode](https://github.com/sekha-ai/sekha-vscode) | VS Code extension | TypeScript | 🚧 Beta | Marketplace |
+| [sekha-cli](https://github.com/sekha-ai/sekha-cli) | Command-line interface | Go | 🚧 Beta | Binary |
+| [sekha-obsidian](https://github.com/sekha-ai/sekha-obsidian) | Obsidian note integration | TypeScript | 🚧 Beta | Plugin |
+
+**Now Available on PyPI:**
+
+- `pip install sekha-llm-bridge` - Universal LLM adapter
+- `pip install sekha-mcp` - MCP protocol server for Claude Desktop
+
+[:octicons-arrow-right-24: Python Installation Guide](getting-started/python-installation.md)
 
 ---
 

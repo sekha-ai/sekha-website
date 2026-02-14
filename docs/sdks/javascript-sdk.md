@@ -631,6 +631,8 @@ function SearchComponent() {
 }
 ```
 
+For more examples, check the [GitHub repository](https://github.com/sekha-ai/sekha-js-sdk/tree/main/examples).
+
 ---
 
 ## Development
@@ -666,8 +668,7 @@ npm run lint:fix
 
 - **[Python SDK](python-sdk.md)** - Python client library
 - **[REST API](../api-reference/rest-api.md)** - Full API reference
-- **[MCP Protocol](../api-reference/mcp.md)** - MCP documentation
-- **[Examples](../examples/)** - More code examples
+- **[MCP Protocol](../api-reference/mcp-tools.md)** - MCP documentation
 
 ---
 
